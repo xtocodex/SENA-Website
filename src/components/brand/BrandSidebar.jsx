@@ -1,0 +1,68 @@
+import {
+  ImageUp,
+  VideoIcon,
+  Images,
+  Film,
+  Layers,
+  LogOut,
+} from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Flex, Box } from "@/components/ui/layout";
+import { cn } from "@/lib/utils";
+import { logout } from "@/context/AuthContext";
+
+const NAV_ITEMS = [
+  { id: 'upload-images', label: 'Upload Images', icon: ImageUp },
+  { id: 'upload-videos', label: 'Upload Videos', icon: VideoIcon },
+  { id: 'my-images',     label: 'My Images',     icon: Images },
+  { id: 'my-videos',     label: 'My Videos',      icon: Film },
+];
+
+export default function BrandSidebar({ activeNav, onNavChange }) {
+  return (
+    <Flex
+      direction="col"
+      className="w-60 shrink-0 h-full border-r border-border bg-card"
+    >
+      {/* Nav items — no wordmark here, it lives in the shared header row */}
+      <ScrollArea className="flex-1 py-4">
+        <Flex direction="col" className="gap-1 px-3">
+          <Box className="px-2 mb-2">
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">
+              Media
+            </span>
+          </Box>
+          {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
+            <Button
+              key={id}
+              variant={activeNav === id ? 'secondary' : 'ghost'}
+              className={cn(
+                "w-full justify-start gap-3 font-normal",
+                activeNav === id && "text-foreground font-medium"
+              )}
+              onClick={() => onNavChange(id)}
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              {label}
+            </Button>
+          ))}
+        </Flex>
+      </ScrollArea>
+
+      {/* Bottom: Logout */}
+      <Flex direction="col" className="px-3 pb-4 gap-2 shrink-0">
+        <Separator />
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-3 font-normal text-muted-foreground hover:text-destructive"
+          onClick={logout}
+        >
+          <LogOut className="w-4 h-4 shrink-0" />
+          Logout
+        </Button>
+      </Flex>
+    </Flex>
+  );
+}
