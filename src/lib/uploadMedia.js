@@ -96,9 +96,9 @@ export async function uploadMedia(file, brandId, mediaType) {
     if (!validation.valid) return { success: false, error: validation.error };
 
     const isImage = mediaType === 'image';
-    const maxSize = isImage ? 10 * 1024 * 1024 : 50 * 1024 * 1024;
+    const maxSize = isImage ? 2 * 1024 * 1024 : 10 * 1024 * 1024;
     if (file.size > maxSize) {
-      return { success: false, error: 'File too large. Max size is 10MB for images / 50MB for videos.' };
+      return { success: false, error: 'File too large. Max size is 2MB for images / 10MB for videos.' };
     }
 
     const timestamp   = Date.now();

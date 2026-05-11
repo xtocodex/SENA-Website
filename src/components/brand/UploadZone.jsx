@@ -156,7 +156,7 @@ export default function UploadZone({ type = 'image' }) {
               {[
                 { label: 'Accepted formats', value: acceptLabel },
                 { label: 'Accepted aspect ratios', value: '1:1 · 9:16 · 16:9 only' },
-                { label: 'Max file size', value: isImage ? '10 MB per image' : '50 MB per video' },
+                { label: 'Max file size', value: isImage ? '2 MB per image' : '10 MB per video' },
               ].map(({ label, value }) => (
                 <Flex key={label} justify="between" align="start" className="gap-4">
                   <span className="text-xs text-muted-foreground shrink-0">{label}</span>
