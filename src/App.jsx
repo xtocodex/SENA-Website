@@ -1,11 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from '@/context/AuthContext';
+import { AuthProvider, SESSION_KEY } from '@/context/AuthContext';
 import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/LoginPage';
 import BrandDashboard from '@/pages/BrandDashboard';
 import DevDashboard from '@/pages/DevDashboard';
-
-const SESSION_KEY = 'sena_session';
 
 function ProtectedRoute({ role, children }) {
   const sessionStr = localStorage.getItem(SESSION_KEY);

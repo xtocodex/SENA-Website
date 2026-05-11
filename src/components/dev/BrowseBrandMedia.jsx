@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FolderPlus, X } from 'lucide-react';
+import { FolderPlus, X, Expand } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,20 +10,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Flex, Grid, Box } from "@/components/ui/layout";
-import { db, storage } from '@/lib/firebase';
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
+import { Flex, Grid } from "@/components/ui/layout";
+import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, serverTimestamp } from 'firebase/firestore';
-import { ref, deleteObject } from 'firebase/storage';
 
-function MediaCard({ item, isSelecting, selectedItems, onToggle, showActions, actionMode, onAddToCollection }) {
+
+function MediaCard({ item, isSelecting, selectedItems, onToggle, showActions, onAddToCollection, onExpand }) {
   const isSelected = selectedItems.includes(item.id);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]               = useState(false);
+  const [loaded, setLoaded]                 = useState(false);
+  const [hovered, setHovered]               = useState(false);
   const [selectedCollection, setSelectedCollection] = useState('Banner');
-  const isVideo = item.format === 'video';
+  const isVideo    = item.format === 'video';
+  const displaySrc = item.thumbnailUrl || item.url;
 
   const handleAdd = async () => {
     setLoading(true);
-    await onAddToCollection(item, actionMode, selectedCollection);
+    await onAddToCollection(item, 'copy', selectedCollection);
     setLoading(false);
   };
 
@@ -31,15 +39,30 @@ function MediaCard({ item, isSelecting, selectedItems, onToggle, showActions, ac
     <Flex
       direction="col"
       className={`rounded-xl border border-border overflow-hidden bg-card group ${isSelected ? 'border-primary ring-2 ring-primary/50' : ''}`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
-      <Box className="relative">
+      <AspectRatio ratio={1}>
+        {!loaded && <div className="absolute inset-0 bg-muted animate-pulse" />}
         {isVideo ? (
-          <video src={item.url} className="w-full h-full object-cover" muted />
+          <video
+            src={displaySrc}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+            muted
+            preload="metadata"
+            onLoadedMetadata={() => setLoaded(true)}
+          />
         ) : (
-          <img src={item.url} className="w-full h-full object-cover" alt={item.fileName} />
+          <img
+            src={displaySrc}
+            alt={item.fileName}
+            loading="lazy"
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+            onLoad={() => setLoaded(true)}
+          />
         )}
 
-        {isSelecting && (
+        {isSelecting ? (
           <Flex align="center" justify="center" className="absolute top-3 left-3">
             <Checkbox
               checked={isSelected}
@@ -47,19 +70,26 @@ function MediaCard({ item, isSelecting, selectedItems, onToggle, showActions, ac
               className="bg-background/80 border-border"
             />
           </Flex>
+        ) : (
+          <Flex
+            align="center"
+            justify="center"
+            className={`absolute inset-0 bg-background/60 backdrop-blur-sm transition-opacity duration-150 ${hovered ? 'opacity-100' : 'opacity-0'}`}
+          >
+            <Button variant="secondary" size="icon" className="w-8 h-8" onClick={() => onExpand(item)}>
+              <Expand className="w-3.5 h-3.5" />
+            </Button>
+          </Flex>
         )}
-      </Box>
+      </AspectRatio>
 
       <Flex direction="col" className="gap-2 p-3">
         <span className="text-xs text-foreground font-medium truncate" title={item.fileName}>
           {item.fileName}
         </span>
-        <Flex align="center" className="gap-2 flex-wrap">
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-            {item.ratioLabel}
-          </Badge>
-          <span className="text-[10px] text-muted-foreground">{item.brandName}</span>
-        </Flex>
+        <span className="text-[10px] text-muted-foreground">
+          {item.brandName}{item.uploadedAt?.toDate ? ` · ${item.uploadedAt.toDate().toLocaleDateString()}` : ''}
+        </span>
 
         {showActions && !isSelecting && (
           <Flex align="center" justify="between" className="pt-1 gap-2">
@@ -104,6 +134,8 @@ export default function BrowseBrandMedia() {
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectedItems, setSelectedItems] = useState([]);
   const [actionMode, setActionMode] = useState('copy');
+  const [bulkCollection, setBulkCollection] = useState('Banner');
+  const [lightboxItem, setLightboxItem] = useState(null);
 
   const fetchBrands = async () => {
     try {
@@ -139,7 +171,7 @@ export default function BrowseBrandMedia() {
           items = [...items, ...imgs, ...vids];
         }
       } else {
-        const selectedBrand = brands.find((b) => b.brandName === brandFilter);
+        const selectedBrand = brands.find((b) => b.id === brandFilter);
         if (selectedBrand) {
           const imgQuery = query(collection(db, 'brandMedia', selectedBrand.id, 'images'), orderBy('uploadedAt', 'desc'));
           const vidQuery = query(collection(db, 'brandMedia', selectedBrand.id, 'videos'), orderBy('uploadedAt', 'desc'));
@@ -181,6 +213,7 @@ export default function BrowseBrandMedia() {
   const toggleSelectMode = () => {
     if (isSelecting) {
       setSelectedItems([]);
+      setActionMode('copy');
     }
     setIsSelecting(!isSelecting);
   };
@@ -205,7 +238,7 @@ export default function BrowseBrandMedia() {
     for (const itemId of selectedItems) {
       const item = mediaItems.find((m) => m.id === itemId);
       if (item) {
-        await handleAddToCollection(item, actionMode, 'Banner');
+        await handleAddToCollection(item, actionMode, bulkCollection);
       }
     }
     setSelectedItems([]);
@@ -217,21 +250,19 @@ export default function BrowseBrandMedia() {
       await addDoc(collection(db, 'devCollections', 'main', `${item.format}s`), {
         fileName: item.fileName,
         url: item.url,
+        thumbnailUrl: item.thumbnailUrl || null,
         ratio: item.ratio,
-        ratioLabel: item.ratioLabel,
         collection: collectionName,
         type: item.format,
         storagePath: item.storagePath,
         sourceBrandId: item.brandId,
         sourceBrandName: item.brandName,
+        sourceMoved: mode === 'move',
         addedAt: serverTimestamp(),
       });
 
       if (mode === 'move') {
         await deleteDoc(doc(db, 'brandMedia', item.brandId, `${item.format}s`, item.id));
-        if (item.storagePath) {
-          await deleteObject(ref(storage, item.storagePath));
-        }
         setMediaItems((prev) => prev.filter((m) => m.id !== item.id));
       }
     } catch (err) {
@@ -262,6 +293,16 @@ export default function BrowseBrandMedia() {
               <SelectContent>
                 <SelectItem value="copy">Copy</SelectItem>
                 <SelectItem value="move">Move</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={bulkCollection} onValueChange={setBulkCollection}>
+              <SelectTrigger className="w-32 h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Banner">Banner</SelectItem>
+                <SelectItem value="Interstitial">Interstitial</SelectItem>
+                <SelectItem value="Rewards">Rewards</SelectItem>
               </SelectContent>
             </Select>
             <Button
@@ -297,7 +338,7 @@ export default function BrowseBrandMedia() {
               <SelectContent>
                 <SelectItem value="all">All Brands</SelectItem>
                 {brands.map((b) => (
-                  <SelectItem key={b.id} value={b.brandName}>{b.brandName}</SelectItem>
+                  <SelectItem key={b.id} value={b.id}>{b.brandName}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -309,9 +350,9 @@ export default function BrowseBrandMedia() {
       </Flex>
 
       {loading ? (
-        <Grid cols={3} gap={4} className="w-full">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-xl border border-border bg-card animate-pulse h-48" />
+        <Grid cols={4} gap={3} className="w-full">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="rounded-xl border border-border bg-card animate-pulse aspect-square" />
           ))}
         </Grid>
       ) : filtered.length === 0 ? (
@@ -319,7 +360,7 @@ export default function BrowseBrandMedia() {
           <span className="text-sm text-muted-foreground">No media found for selected filters.</span>
         </Flex>
       ) : (
-        <Grid cols={3} gap={4} className="w-full">
+        <Grid cols={4} gap={3} className="w-full">
           {filtered.map((item) => (
             <MediaCard
               key={item.id}
@@ -330,10 +371,44 @@ export default function BrowseBrandMedia() {
               showActions={!isSelecting}
               actionMode={actionMode}
               onAddToCollection={handleAddToCollection}
+              onExpand={setLightboxItem}
             />
           ))}
         </Grid>
       )}
+
+      <Dialog open={!!lightboxItem} onOpenChange={(open) => { if (!open) setLightboxItem(null); }}>
+        <DialogContent className="max-w-4xl p-2 bg-card border-border">
+          {lightboxItem && (
+            <Flex direction="col" className="gap-3">
+              <div className="w-full relative rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                {lightboxItem.format === 'video' ? (
+                  <video
+                    src={lightboxItem.url}
+                    className="w-full max-h-[70vh] object-contain"
+                    controls
+                    autoPlay
+                  />
+                ) : (
+                  <img
+                    src={lightboxItem.url}
+                    alt={lightboxItem.fileName}
+                    className="w-full max-h-[70vh] object-contain"
+                  />
+                )}
+              </div>
+              <Flex justify="between" align="center" className="px-2 pb-1">
+                <span className="text-sm font-medium text-foreground truncate max-w-xs">
+                  {lightboxItem.fileName}
+                </span>
+                <Flex align="center" className="gap-2 shrink-0">
+                  <span className="text-xs text-muted-foreground">{lightboxItem.brandName}</span>
+                </Flex>
+              </Flex>
+            </Flex>
+          )}
+        </DialogContent>
+      </Dialog>
     </Flex>
   );
 }

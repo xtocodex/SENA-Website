@@ -3,13 +3,13 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCbTbK_t04hnW1AUm21RddQY9dS8yRNqbM",
-  authDomain: "ads-website-genesis.firebaseapp.com",
-  projectId: "ads-website-genesis",
-  storageBucket: "ads-website-genesis.firebasestorage.app",
-  messagingSenderId: "326489979410",
-  appId: "1:326489979410:web:9d424c3457129d4d1bb6cb",
-  measurementId: "G-Y7FVSTJ1ZS"
+  apiKey: "AIzaSyCscFIlUxTIMM3FgLqFfD2jHd-MLk_65zo",
+  authDomain: "brand-advertisement-website.firebaseapp.com",
+  projectId: "brand-advertisement-website",
+  storageBucket: "brand-advertisement-website.firebasestorage.app",
+  messagingSenderId: "293320927574",
+  appId: "1:293320927574:web:d0a0c25429c6161754cef7",
+  measurementId: "G-Y2XDC702J7"
 };
 
 const app = initializeApp(firebaseConfig);

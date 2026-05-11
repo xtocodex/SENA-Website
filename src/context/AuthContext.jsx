@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext(null);
 
-const SESSION_KEY = 'sena_session';
+export const SESSION_KEY = 'sena_session';
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);

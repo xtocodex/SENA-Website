@@ -7,16 +7,16 @@ import UploadZone from "@/components/brand/UploadZone";
 import MediaGallery from "@/components/brand/MediaGallery";
 import { useAuth } from "@/context/AuthContext";
 
-const CONTENT_MAP = {
-  'upload-images': () => <UploadZone type="image" />,
-  'upload-videos': () => <UploadZone type="video" />,
-  'my-images': () => <MediaGallery type="image" brandId={session?.id} />,
-  'my-videos': () => <MediaGallery type="video" brandId={session?.id} />,
-};
-
 export default function BrandDashboard() {
   const [activeNav, setActiveNav] = useState('upload-images');
   const { session } = useAuth();
+
+  const CONTENT_MAP = {
+    'upload-images': () => <UploadZone type="image" />,
+    'upload-videos': () => <UploadZone type="video" />,
+    'my-images': () => <MediaGallery type="image" brandId={session?.id} />,
+    'my-videos': () => <MediaGallery type="video" brandId={session?.id} />,
+  };
 
   const Content = CONTENT_MAP[activeNav] ?? (() => null);
 

@@ -48,7 +48,7 @@ export default function UploadZone({ type = 'image' }) {
     const result = await uploadMedia(file, session.id, type);
 
     if (result.success) {
-      setUploadResult({ success: true, fileName: file.name, ratioLabel: result.ratioLabel });
+      setUploadResult({ success: true, fileName: file.name });
     } else {
       setUploadResult({ success: false, error: result.error });
     }
@@ -128,7 +128,7 @@ export default function UploadZone({ type = 'image' }) {
       {uploadResult?.success && (
         <Box className="text-center">
           <span className="text-sm text-green-500 font-medium">
-            ✓ {uploadResult.fileName} uploaded successfully as {uploadResult.ratioLabel}
+            ✓ {uploadResult.fileName} uploaded successfully
           </span>
         </Box>
       )}
@@ -156,8 +156,7 @@ export default function UploadZone({ type = 'image' }) {
               {[
                 { label: 'Accepted formats', value: acceptLabel },
                 { label: 'Accepted aspect ratios', value: '1:1 · 9:16 · 16:9 only' },
-                { label: 'Ratio mapping', value: '1:1 → Interstitial · 9:16 → Rewards · 16:9 → Banner' },
-                { label: 'Max file size', value: isImage ? '10 MB per image' : '100 MB per video' },
+                { label: 'Max file size', value: isImage ? '10 MB per image' : '50 MB per video' },
               ].map(({ label, value }) => (
                 <Flex key={label} justify="between" align="start" className="gap-4">
                   <span className="text-xs text-muted-foreground shrink-0">{label}</span>
