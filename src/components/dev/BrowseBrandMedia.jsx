@@ -26,8 +26,7 @@ function MediaCard({ item, isSelecting, selectedItems, onToggle, showActions, on
   const [loaded, setLoaded]                 = useState(false);
   const [hovered, setHovered]               = useState(false);
   const [selectedCollection, setSelectedCollection] = useState('Banner');
-  const isVideo    = item.format === 'video';
-  const displaySrc = item.thumbnailUrl || item.url;
+  const isVideo = item.format === 'video';
 
   const handleAdd = async () => {
     setLoading(true);
@@ -45,16 +44,28 @@ function MediaCard({ item, isSelecting, selectedItems, onToggle, showActions, on
       <AspectRatio ratio={1}>
         {!loaded && <div className="absolute inset-0 bg-muted animate-pulse" />}
         {isVideo ? (
-          <video
-            src={displaySrc}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-            muted
-            preload="metadata"
-            onLoadedMetadata={() => setLoaded(true)}
-          />
+          item.thumbnailUrl ? (
+            <img
+              src={item.thumbnailUrl}
+              alt={item.fileName}
+              loading="lazy"
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+              onLoad={() => setLoaded(true)}
+            />
+          ) : (
+            <video
+              src={item.url}
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+              muted
+              playsInline
+              preload="metadata"
+              onLoadedMetadata={(e) => { e.currentTarget.currentTime = 1; }}
+              onSeeked={() => setLoaded(true)}
+            />
+          )
         ) : (
           <img
-            src={displaySrc}
+            src={item.thumbnailUrl || item.url}
             alt={item.fileName}
             loading="lazy"
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}

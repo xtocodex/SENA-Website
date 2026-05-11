@@ -28,8 +28,7 @@ const TABS = ['All', 'Banner', 'Interstitial', 'Rewards'];
 function MediaCard({ item, onDelete, onExpand }) {
   const [hovered, setHovered] = useState(false);
   const [loaded, setLoaded]   = useState(false);
-  const isVideo      = item.type === 'video';
-  const displaySrc   = item.thumbnailUrl || item.url;
+  const isVideo    = item.type === 'video';
 
   return (
     <Flex
@@ -42,16 +41,28 @@ function MediaCard({ item, onDelete, onExpand }) {
       <AspectRatio ratio={1}>
         {!loaded && <div className="absolute inset-0 bg-muted animate-pulse" />}
         {isVideo ? (
-          <video
-            src={displaySrc}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-            muted
-            preload="metadata"
-            onLoadedMetadata={() => setLoaded(true)}
-          />
+          item.thumbnailUrl ? (
+            <img
+              src={item.thumbnailUrl}
+              alt={item.fileName}
+              loading="lazy"
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+              onLoad={() => setLoaded(true)}
+            />
+          ) : (
+            <video
+              src={item.url}
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+              muted
+              playsInline
+              preload="metadata"
+              onLoadedMetadata={(e) => { e.currentTarget.currentTime = 1; }}
+              onSeeked={() => setLoaded(true)}
+            />
+          )
         ) : (
           <img
-            src={displaySrc}
+            src={item.thumbnailUrl || item.url}
             alt={item.fileName}
             loading="lazy"
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
