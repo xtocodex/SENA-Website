@@ -79,7 +79,7 @@ function MediaCard({ item, isVideo, onDelete, onExpand }) {
         <Flex
           align="center"
           justify="center"
-          className={`absolute inset-0 bg-background/60 backdrop-blur-sm transition-opacity duration-150 gap-2 ${hovered ? 'opacity-100' : 'opacity-0'}`}
+          className={`media-hover-actions absolute inset-0 bg-background/60 backdrop-blur-sm transition-opacity duration-150 gap-2 ${hovered ? 'opacity-100' : 'opacity-0'}`}
         >
           <Button
             variant="secondary"
@@ -159,7 +159,7 @@ export default function MediaGallery({ brandId, type }) {
 
   if (loading) {
     return (
-      <Grid cols={4} gap={3} className="w-full">
+      <Grid gap={3} className="w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="rounded-xl border border-border bg-card animate-pulse aspect-square" />
         ))}
@@ -177,7 +177,7 @@ export default function MediaGallery({ brandId, type }) {
 
   return (
     <>
-      <Grid cols={4} gap={3} className="w-full">
+      <Grid gap={3} className="w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
         {items.map((item) => (
           <MediaCard
             key={item.id}

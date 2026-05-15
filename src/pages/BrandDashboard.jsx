@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function BrandDashboard() {
   const [activeNav, setActiveNav] = useState('upload-images');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { session } = useAuth();
 
   const CONTENT_MAP = {
@@ -23,14 +24,27 @@ export default function BrandDashboard() {
   return (
     <Flex direction="col" className="h-screen w-full overflow-hidden bg-background">
 
-      {/* ── Shared header row (spans full width — fixes border alignment) ── */}
-      <BrandTopBar />
+      <BrandTopBar
+        sidebarOpen={sidebarOpen}
+        onSidebarToggle={() => setSidebarOpen(v => !v)}
+      />
 
-      {/* ── Body: sidebar + content side-by-side ── */}
-      <Flex className="flex-1 min-h-0">
-        <BrandSidebar activeNav={activeNav} onNavChange={setActiveNav} />
+      <Flex className="flex-1 min-h-0 relative">
+        {/* Mobile overlay backdrop */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
 
-        {/* Main content */}
+        <BrandSidebar
+          activeNav={activeNav}
+          onNavChange={setActiveNav}
+          sidebarOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
+
         <ScrollArea className="flex-1">
           <Flex direction="col" className="p-8">
             <Content />

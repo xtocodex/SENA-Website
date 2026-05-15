@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowRight, User, Code, AlertCircle, Layers } from 'lucide-react';
+import { ArrowRight, ArrowLeft, User, Code, AlertCircle, Gamepad2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -11,7 +11,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
   CardDescription,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -84,8 +83,21 @@ export default function LoginPage() {
       direction="col"
       align="center"
       justify="center"
-      className="min-h-screen px-4 py-12"
+      className="min-h-screen px-4 py-12 relative"
     >
+      {/* Back to home */}
+      <Box className="absolute top-5 left-5">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-2 text-muted-foreground"
+          onClick={() => navigate('/')}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Home
+        </Button>
+      </Box>
+
       <Container maxWidth="sm">
 
         {/* Logo / Wordmark */}
@@ -93,16 +105,16 @@ export default function LoginPage() {
           <Flex
             align="center"
             justify="center"
-            className="w-14 h-14 rounded-2xl bg-card border border-border"
+            className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20"
           >
-            <Layers className="w-7 h-7 text-primary" />
+            <Gamepad2 className="w-7 h-7 text-primary" />
           </Flex>
           <Flex direction="col" align="center" className="gap-1">
-            <CardTitle className="text-4xl tracking-tight text-foreground">
-              SENA
-            </CardTitle>
+            <span className="text-3xl font-black tracking-tight text-foreground">
+              GauravGo<span className="text-primary">Games</span>
+            </span>
             <CardDescription className="text-sm">
-              Management Platform for SENA AD
+              SENA Management Platform
             </CardDescription>
           </Flex>
         </Flex>
@@ -155,10 +167,7 @@ export default function LoginPage() {
                     </Box>
 
                     <Box className="space-y-2">
-                      <Flex justify="between" align="center">
-                        <Label htmlFor="password">Password</Label>
-                        
-                      </Flex>
+                      <Label htmlFor="password">Password</Label>
                       <Input
                         id="password"
                         type="password"

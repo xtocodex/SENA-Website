@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FolderPlus, X, Expand } from 'lucide-react';
+import { FolderPlus, X, Expand, CheckCircle } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -85,7 +85,7 @@ function MediaCard({ item, isSelecting, selectedItems, onToggle, showActions, on
           <Flex
             align="center"
             justify="center"
-            className={`absolute inset-0 bg-background/60 backdrop-blur-sm transition-opacity duration-150 ${hovered ? 'opacity-100' : 'opacity-0'}`}
+            className={`media-hover-actions absolute inset-0 bg-background/60 backdrop-blur-sm transition-opacity duration-150 ${hovered ? 'opacity-100' : 'opacity-0'}`}
           >
             <Button variant="secondary" size="icon" className="w-8 h-8" onClick={() => onExpand(item)}>
               <Expand className="w-3.5 h-3.5" />
@@ -147,6 +147,7 @@ export default function BrowseBrandMedia() {
   const [actionMode, setActionMode] = useState('copy');
   const [bulkCollection, setBulkCollection] = useState('Banner');
   const [lightboxItem, setLightboxItem] = useState(null);
+  const [bulkSuccess, setBulkSuccess] = useState(null);
 
   const fetchBrands = async () => {
     try {
@@ -246,14 +247,18 @@ export default function BrowseBrandMedia() {
   };
 
   const handleBulkAdd = async () => {
+    const count = selectedItems.length;
+    const collection = bulkCollection;
     for (const itemId of selectedItems) {
       const item = mediaItems.find((m) => m.id === itemId);
       if (item) {
-        await handleAddToCollection(item, actionMode, bulkCollection);
+        await handleAddToCollection(item, actionMode, collection);
       }
     }
     setSelectedItems([]);
     setIsSelecting(false);
+    setBulkSuccess({ count, collection });
+    setTimeout(() => setBulkSuccess(null), 4000);
   };
 
   const handleAddToCollection = async (item, mode, collectionName) => {
@@ -360,8 +365,15 @@ export default function BrowseBrandMedia() {
         )}
       </Flex>
 
+      {bulkSuccess && (
+        <Flex align="center" className="gap-2 px-4 py-3 rounded-lg bg-green-500/10 border border-green-500/20 text-sm text-green-500">
+          <CheckCircle className="w-4 h-4 shrink-0" />
+          {bulkSuccess.count} item{bulkSuccess.count !== 1 ? 's' : ''} added to <strong className="font-semibold">{bulkSuccess.collection}</strong>
+        </Flex>
+      )}
+
       {loading ? (
-        <Grid cols={4} gap={3} className="w-full">
+        <Grid gap={3} className="w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="rounded-xl border border-border bg-card animate-pulse aspect-square" />
           ))}
@@ -371,7 +383,7 @@ export default function BrowseBrandMedia() {
           <span className="text-sm text-muted-foreground">No media found for selected filters.</span>
         </Flex>
       ) : (
-        <Grid cols={4} gap={3} className="w-full">
+        <Grid gap={3} className="w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
           {filtered.map((item) => (
             <MediaCard
               key={item.id}

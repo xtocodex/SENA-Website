@@ -3,7 +3,6 @@ import {
   VideoIcon,
   Images,
   Film,
-  Layers,
   LogOut,
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -20,13 +19,21 @@ const NAV_ITEMS = [
   { id: 'my-videos',     label: 'My Videos',      icon: Film },
 ];
 
-export default function BrandSidebar({ activeNav, onNavChange }) {
+export default function BrandSidebar({ activeNav, onNavChange, sidebarOpen, onClose }) {
+  const handleNav = (id) => {
+    onNavChange(id);
+    onClose?.();
+  };
+
   return (
     <Flex
       direction="col"
-      className="w-60 shrink-0 h-full border-r border-border bg-card"
+      className={cn(
+        "w-60 shrink-0 h-full border-r border-border bg-card z-50",
+        "fixed inset-y-0 left-0 transition-transform duration-300 md:relative md:translate-x-0 md:z-auto",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+      )}
     >
-      {/* Nav items — no wordmark here, it lives in the shared header row */}
       <ScrollArea className="flex-1 py-4">
         <Flex direction="col" className="gap-1 px-3">
           <Box className="px-2 mb-2">
@@ -42,7 +49,7 @@ export default function BrandSidebar({ activeNav, onNavChange }) {
                 "w-full justify-start gap-3 font-normal",
                 activeNav === id && "text-foreground font-medium"
               )}
-              onClick={() => onNavChange(id)}
+              onClick={() => handleNav(id)}
             >
               <Icon className="w-4 h-4 shrink-0" />
               {label}
@@ -51,7 +58,6 @@ export default function BrandSidebar({ activeNav, onNavChange }) {
         </Flex>
       </ScrollArea>
 
-      {/* Bottom: Logout */}
       <Flex direction="col" className="px-3 pb-4 gap-2 shrink-0">
         <Separator />
         <Button

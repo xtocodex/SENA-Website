@@ -1,48 +1,59 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Layers } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Gamepad2, Menu, X } from "lucide-react";
 import { Flex } from "@/components/ui/layout";
 import { useAuth } from "@/context/AuthContext";
 
-export default function BrandTopBar() {
+export default function BrandTopBar({ sidebarOpen, onSidebarToggle }) {
   const { session } = useAuth();
-  
+
   const brandName = session?.brandName || '';
   const email = session?.email || '';
-  const initials = brandName ? brandName.slice(0, 2).toUpperCase() : '';
+  const initials = brandName
+    ? brandName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+    : email.slice(0, 2).toUpperCase();
+
   return (
-    /**
-     * This is a SHARED header row that spans sidebar + main area.
-     * It is rendered ABOVE the sidebar/content split in BrandDashboard.
-     * This ensures the h-16 border-b is pixel-perfect across the full width,
-     * eliminating the T-junction misalignment.
-     */
     <Flex
       align="center"
       className="h-16 w-full border-b border-border bg-card shrink-0"
     >
-      {/* ── Wordmark cell (mirrors sidebar width exactly) ── */}
+      {/* Wordmark cell (mirrors sidebar width exactly) */}
       <Flex
         align="center"
         className="w-60 shrink-0 gap-2.5 px-5 h-full border-r border-border"
       >
-        <Flex
-          align="center"
-          justify="center"
-          className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20"
+        {/* Mobile hamburger */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden w-8 h-8 shrink-0"
+          onClick={onSidebarToggle}
+          aria-label="Toggle navigation"
         >
-          <Layers className="w-4 h-4 text-primary" />
+          {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+        </Button>
+
+        <Flex align="center" className="gap-2 min-w-0">
+          <Flex
+            align="center"
+            justify="center"
+            className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 shrink-0"
+          >
+            <Gamepad2 className="w-4 h-4 text-primary" />
+          </Flex>
+          <span className="text-base font-black tracking-tight text-foreground hidden sm:block truncate">
+            GauravGo<span className="text-primary">Games</span>
+          </span>
         </Flex>
-        <span className="text-base font-semibold tracking-tight text-foreground">SENA</span>
       </Flex>
 
-      {/* ── Main content header ── */}
+      {/* Main content header */}
       <Flex align="center" justify="end" className="flex-1 px-6 h-full">
-
-        {/* User pill */}
         <Flex align="center" className="gap-3">
-          <Flex direction="col" align="end" className="gap-0.5">
+          <Flex direction="col" align="end" className="gap-0.5 hidden sm:flex">
             <span className="text-xs font-medium text-foreground leading-none">
               {brandName}
             </span>
@@ -51,7 +62,7 @@ export default function BrandTopBar() {
             </span>
           </Flex>
 
-          <Separator orientation="vertical" className="h-8" />
+          <Separator orientation="vertical" className="h-8 hidden sm:block" />
 
           <Flex align="center" className="gap-2">
             <Avatar className="w-8 h-8">

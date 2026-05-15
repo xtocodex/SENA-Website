@@ -22,10 +22,10 @@ const C = {
 
 /* ─── Injected Global CSS ────────────────────────────────── */
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
   *, *::before, *::after { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  body { font-family: 'Inter', system-ui, sans-serif; margin: 0; }
+  body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; margin: 0; }
 
   @keyframes pulseGlow {
     0%,100% { opacity:.20; transform:scale(1); }
@@ -116,6 +116,29 @@ const CSS = `
     transform: translateY(-4px);
     box-shadow: 0 0 28px rgba(255,215,0,.14);
     border-color: rgba(255,215,0,.5) !important;
+  }
+
+  *:focus-visible {
+    outline: 2px solid #FFD700;
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fade1, .fade2, .fade3, .fade4 { animation: none; opacity: 1; transform: none; }
+    .hero-grid { animation: none; opacity: .06; }
+    .hero-orb { animation: none; opacity: .12; }
+    .particle { display: none; }
+    .shimmer-text {
+      animation: none;
+      background: #FFD700;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: #FFD700;
+      background-clip: text;
+    }
+    .game-card, .step-card, .why-box, .feature-card, .nav-link, .btn-outline, .btn-play {
+      transition: none;
+    }
   }
 `;
 
@@ -271,9 +294,27 @@ function Divider() {
 }
 
 /* ─── Navbar ─────────────────────────────────────────────── */
+const SECTION_MAP = { Home: 'home', About: 'about', Games: 'games', Services: 'services', Contact: 'contact' };
+
 function Navbar({ scrolled }) {
   const [open, setOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('home');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const ids = ['home', 'about', 'games', 'services', 'contact'];
+    const observers = ids.map(id => {
+      const el = document.getElementById(id);
+      if (!el) return null;
+      const obs = new IntersectionObserver(
+        ([entry]) => { if (entry.isIntersecting) setActiveSection(id); },
+        { threshold: 0.25, rootMargin: '-80px 0px 0px 0px' }
+      );
+      obs.observe(el);
+      return obs;
+    });
+    return () => observers.forEach(o => o?.disconnect());
+  }, []);
 
   const scrollTo = (id) => {
     if (id === 'login') { navigate('/login'); return; }
@@ -317,7 +358,7 @@ function Navbar({ scrolled }) {
             <button
               key={l}
               className="nav-link text-sm font-medium bg-transparent border-0 cursor-pointer p-0"
-              style={{ color: C.muted }}
+              style={{ color: SECTION_MAP[l] === activeSection ? C.gold : C.muted }}
               onClick={() => scrollTo(l.toLowerCase())}
             >
               {l}
@@ -850,6 +891,10 @@ function FAQ() {
                   transition: 'border-color .25s',
                 }}
                 onClick={() => toggle(i)}
+                role="button"
+                tabIndex={0}
+                aria-expanded={isOpen}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(i); } }}
               >
                 {/* Question row */}
                 <div className="flex items-center justify-between px-6 py-5 gap-4">
@@ -1062,8 +1107,9 @@ function DemoForm() {
           {/* Row 1 — Name + Email */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
             <div>
-              <label style={labelStyle}>Full Name *</label>
+              <label htmlFor="f-name" style={labelStyle}>Full Name *</label>
               <input
+                id="f-name"
                 type="text"
                 placeholder="Your Name"
                 value={fields.name}
@@ -1075,8 +1121,9 @@ function DemoForm() {
               />
             </div>
             <div>
-              <label style={labelStyle}>Email Address *</label>
+              <label htmlFor="f-email" style={labelStyle}>Email Address *</label>
               <input
+                id="f-email"
                 type="email"
                 placeholder="hello@studio.com"
                 value={fields.email}
@@ -1093,13 +1140,13 @@ function DemoForm() {
           {/* Row 2 — Phone + Company */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
             <div>
-              <label style={labelStyle}>Phone / WhatsApp *</label>
-              <div style={{ display: 'flex', borderRadius: 10, border: `1px solid ${errors.phone ? '#ff6b6b' : 'rgba(255,215,0,.18)'}`, overflow: 'hidden', transition: 'border-color .2s' }}
-                onFocus={() => {}} >
+              <label htmlFor="f-phone" style={labelStyle}>Phone / WhatsApp *</label>
+              <div style={{ display: 'flex', borderRadius: 10, border: `1px solid ${errors.phone ? '#ff6b6b' : 'rgba(255,215,0,.18)'}`, overflow: 'hidden', transition: 'border-color .2s' }}>
                 <span style={{ background: 'rgba(255,215,0,.10)', color: C.gold, fontWeight: 700, fontSize: 14, padding: '12px 14px', borderRight: '1px solid rgba(255,215,0,.18)', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', fontFamily: 'inherit' }}>
                   +91
                 </span>
                 <input
+                  id="f-phone"
                   type="tel"
                   inputMode="numeric"
                   placeholder="98765 43210"
@@ -1115,8 +1162,9 @@ function DemoForm() {
               {errors.phone && <p style={{ color: '#ff6b6b', fontSize: 11, marginTop: 4 }}>{errors.phone}</p>}
             </div>
             <div>
-              <label style={labelStyle}>Company / Studio Name</label>
+              <label htmlFor="f-company" style={labelStyle}>Company / Studio Name</label>
               <input
+                id="f-company"
                 type="text"
                 placeholder="PixelForge Games"
                 value={fields.company}
@@ -1130,8 +1178,9 @@ function DemoForm() {
 
           {/* Row 3 — Role */}
           <div className="mb-5">
-            <label style={labelStyle}>I am a…</label>
+            <label htmlFor="f-role" style={labelStyle}>I am a…</label>
             <select
+              id="f-role"
               value={fields.role}
               onChange={set('role')}
               onFocus={onFocus}
@@ -1149,8 +1198,9 @@ function DemoForm() {
 
           {/* Row 4 — Message */}
           <div className="mb-8">
-            <label style={labelStyle}>Message</label>
+            <label htmlFor="f-message" style={labelStyle}>Message</label>
             <textarea
+              id="f-message"
               rows={4}
               placeholder="Tell us about your game, brand, or what you're looking for…"
               value={fields.message}
@@ -1190,20 +1240,19 @@ function DemoForm() {
 }
 
 /* ─── Footer ─────────────────────────────────────────────── */
+const FOOTER_NAV = [
+  { label: 'Home',     id: 'home'    },
+  { label: 'About',    id: 'about'   },
+  { label: 'Games',    id: 'games'   },
+  { label: 'Services', id: 'services'},
+  { label: 'Contact',  id: 'contact' },
+];
+
 function Footer() {
   const scrollTo = (id) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
-
-  const FOOTER_LINKS = [
-    { label: 'Home',           id: 'home'    },
-    { label: 'About',          id: 'about'   },
-    { label: 'Games',          id: 'games'   },
-    { label: 'Contact',        id: 'contact' },
-    { label: 'Privacy Policy', id: null      },
-    { label: 'Terms',          id: null      },
-  ];
 
   return (
     <footer
@@ -1211,21 +1260,38 @@ function Footer() {
       style={{ background: '#0a0a0a', borderTop: '1px solid rgba(255,215,0,.14)' }}
     >
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col gap-3 mb-10">
-          <div className="flex items-center gap-2">
-            <div
-              className="flex items-center justify-center rounded-lg"
-              style={{ background: C.gold, width: 34, height: 34 }}
-            >
-              <Gamepad2 size={18} color="#0a0a0a" strokeWidth={2.5} />
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8 mb-10">
+          {/* Brand */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <div
+                className="flex items-center justify-center rounded-lg"
+                style={{ background: C.gold, width: 34, height: 34 }}
+              >
+                <Gamepad2 size={18} color="#0a0a0a" strokeWidth={2.5} />
+              </div>
+              <span className="text-xl font-black text-white">
+                GauravGo<span style={{ color: C.gold }}>Games</span>
+              </span>
             </div>
-            <span className="text-xl font-black text-white">
-              GauravGo<span style={{ color: C.gold }}>Games</span>
-            </span>
+            <p className="text-xs font-medium max-w-xs" style={{ color: C.muted }}>
+              Games That Connects Reality With Imagination
+            </p>
           </div>
-          <p className="text-xs font-medium max-w-xs" style={{ color: C.muted }}>
-            Games That Connects Reality With Imagination
-          </p>
+
+          {/* Nav links */}
+          <nav aria-label="Footer navigation" className="flex flex-wrap gap-x-8 gap-y-3">
+            {FOOTER_NAV.map(({ label, id }) => (
+              <button
+                key={id}
+                onClick={() => scrollTo(id)}
+                className="nav-link text-sm font-medium bg-transparent border-0 cursor-pointer p-0"
+                style={{ color: C.muted }}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
         </div>
 
         {/* Divider */}
@@ -1236,6 +1302,38 @@ function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+/* ─── Scroll To Top ──────────────────────────────────────── */
+function ScrollToTop() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 500);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <button
+      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      className="fixed bottom-6 right-6 z-50 flex items-center justify-center rounded-full cursor-pointer border-0"
+      style={{
+        width: 44, height: 44,
+        background: `linear-gradient(135deg, ${C.gold}, ${C.orange})`,
+        color: '#0a0a0a',
+        boxShadow: '0 4px 20px rgba(255,215,0,.30)',
+        transition: 'transform .2s ease, box-shadow .2s ease',
+      }}
+      aria-label="Scroll to top"
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(255,215,0,.45)'; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(255,215,0,.30)'; }}
+    >
+      <ChevronUp size={20} strokeWidth={2.5} />
+    </button>
   );
 }
 
@@ -1265,6 +1363,7 @@ export default function LandingPage() {
       <FooterCTA />
       <DemoForm />
       <Footer />
+      <ScrollToTop />
     </div>
   );
 }

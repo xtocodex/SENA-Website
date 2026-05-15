@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Upload, FileImage, FileVideo, Info, Loader2 } from 'lucide-react';
+import { Upload, FileImage, FileVideo, Info, Loader2, CheckCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -74,7 +74,11 @@ export default function UploadZone({ type = 'image' }) {
       />
       {/* Drop Zone */}
       <Box
+        role="button"
+        tabIndex={0}
+        aria-label={`Upload ${isImage ? 'image' : 'video'} files. Click or press Enter to browse.`}
         onClick={() => fileInputRef.current?.click()}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -126,11 +130,12 @@ export default function UploadZone({ type = 'image' }) {
       </Box>
 
       {uploadResult?.success && (
-        <Box className="text-center">
+        <Flex align="center" justify="center" className="gap-2">
+          <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
           <span className="text-sm text-green-500 font-medium">
-            ✓ {uploadResult.fileName} uploaded successfully
+            {uploadResult.fileName} uploaded successfully
           </span>
-        </Box>
+        </Flex>
       )}
 
       {!uploadResult?.success && uploadResult?.error && (

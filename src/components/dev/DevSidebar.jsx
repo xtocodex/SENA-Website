@@ -3,7 +3,6 @@ import {
   ImagePlus,
   FolderGit2,
   LogOut,
-  Shield,
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -13,16 +12,25 @@ import { cn } from "@/lib/utils";
 import { logout } from "@/context/AuthContext";
 
 const NAV_ITEMS = [
-  { id: 'manage-brands',    label: 'Manage Brands',    icon: Building2 },
-  { id: 'browse-media',     label: 'Browse Brand Media', icon: ImagePlus },
-  { id: 'my-collections',   label: 'My Collections',   icon: FolderGit2 },
+  { id: 'manage-brands',    label: 'Manage Brands',      icon: Building2  },
+  { id: 'browse-media',     label: 'Browse Brand Media', icon: ImagePlus  },
+  { id: 'my-collections',   label: 'My Collections',     icon: FolderGit2 },
 ];
 
-export default function DevSidebar({ activeNav, onNavChange }) {
+export default function DevSidebar({ activeNav, onNavChange, sidebarOpen, onClose }) {
+  const handleNav = (id) => {
+    onNavChange(id);
+    onClose?.();
+  };
+
   return (
     <Flex
       direction="col"
-      className="w-60 shrink-0 h-full border-r border-border bg-card"
+      className={cn(
+        "w-60 shrink-0 h-full border-r border-border bg-card z-50",
+        "fixed inset-y-0 left-0 transition-transform duration-300 md:relative md:translate-x-0 md:z-auto",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+      )}
     >
       <ScrollArea className="flex-1 py-4">
         <Flex direction="col" className="gap-1 px-3">
@@ -39,7 +47,7 @@ export default function DevSidebar({ activeNav, onNavChange }) {
                 "w-full justify-start gap-3 font-normal",
                 activeNav === id && "text-foreground font-medium"
               )}
-              onClick={() => onNavChange(id)}
+              onClick={() => handleNav(id)}
             >
               <Icon className="w-4 h-4 shrink-0" />
               {label}

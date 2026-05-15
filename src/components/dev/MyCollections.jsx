@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -73,7 +74,7 @@ function MediaCard({ item, onDelete, onExpand }) {
         <Flex
           align="center"
           justify="center"
-          className={`absolute inset-0 bg-background/60 backdrop-blur-sm transition-opacity duration-150 gap-2 ${hovered ? 'opacity-100' : 'opacity-0'}`}
+          className={`media-hover-actions absolute inset-0 bg-background/60 backdrop-blur-sm transition-opacity duration-150 gap-2 ${hovered ? 'opacity-100' : 'opacity-0'}`}
         >
           <Button variant="secondary" size="icon" className="w-8 h-8" onClick={(e) => { e.stopPropagation(); onExpand(item); }}>
             <Expand className="w-3.5 h-3.5" />
@@ -144,6 +145,8 @@ export default function MyCollections() {
     }
   };
 
+  const tabCount = (tab) => tab === 'All' ? items.length : items.filter(m => m.collection === tab).length;
+
   const filtered = activeTab === 'All'
     ? items
     : items.filter((m) => m.collection === activeTab);
@@ -154,22 +157,26 @@ export default function MyCollections() {
         <h2 className="text-lg font-semibold text-foreground">My Collections</h2>
       </Flex>
 
-      <Flex align="center" className="gap-1">
-        {TABS.map((tab) => (
-          <Button
-            key={tab}
-            variant={activeTab === tab ? 'default' : 'ghost'}
-            size="sm"
-            className="text-xs"
-            onClick={() => setActiveTab(tab)}
-          >
-            {tab}
-          </Button>
-        ))}
-      </Flex>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          {TABS.map((tab) => {
+            const count = tabCount(tab);
+            return (
+              <TabsTrigger key={tab} value={tab} className="gap-2">
+                {tab}
+                {!loading && count > 0 && (
+                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 ml-1">
+                    {count}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+      </Tabs>
 
       {loading ? (
-        <Grid cols={4} gap={3} className="w-full">
+        <Grid gap={3} className="w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="rounded-xl border border-border bg-card animate-pulse aspect-square" />
           ))}
@@ -179,7 +186,7 @@ export default function MyCollections() {
           <span className="text-sm text-muted-foreground">No items in this collection.</span>
         </Flex>
       ) : (
-        <Grid cols={4} gap={3} className="w-full">
+        <Grid gap={3} className="w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
           {filtered.map((item) => (
             <MediaCard key={item.id} item={item} onDelete={setDeleteTarget} onExpand={setLightboxItem} />
           ))}
