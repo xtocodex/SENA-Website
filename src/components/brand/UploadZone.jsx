@@ -1,177 +1,209 @@
-import { useState, useRef } from 'react';
-import { Upload, FileImage, FileVideo, Info, Loader2, CheckCircle } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Upload, FileImage, FileVideo, Info, CheckCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Flex, Box } from "@/components/ui/layout";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
-import { uploadMedia } from "@/lib/uploadMedia";
+import { uploadMedia, validateAspectRatio } from "@/lib/uploadMedia";
+import AdMetadataModal from "@/components/brand/AdMetadataModal";
 
 export default function UploadZone({ type = 'image' }) {
   const { session } = useAuth();
-  const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadResult, setUploadResult] = useState(null);
+  const [isDragging,    setIsDragging]    = useState(false);
+  const [isUploading,   setIsUploading]   = useState(false);
+  const [uploadResult,  setUploadResult]  = useState(null);
+  const [pendingFile,   setPendingFile]   = useState(null);
+  const [previewUrl,    setPreviewUrl]    = useState(null);
+  const [ratioLabel,    setRatioLabel]    = useState(null);
+  const [modalOpen,     setModalOpen]     = useState(false);
   const fileInputRef = useRef(null);
 
   const isImage = type === 'image';
   const Icon = isImage ? FileImage : FileVideo;
-  const acceptLabel = isImage
-    ? 'JPG, PNG, WebP'
-    : 'MP4, MOV, WebM';
-  const acceptAttr = isImage
+  const acceptLabel = isImage ? 'JPG, PNG, WebP' : 'MP4, MOV, WebM';
+  const acceptAttr  = isImage
     ? "image/jpeg,image/png,image/webp"
     : "video/mp4,video/quicktime,video/webm";
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
+  // Clean up object URL when modal closes or component unmounts
+  useEffect(() => {
+    return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
+  }, [previewUrl]);
+
+  const openModal = async (file) => {
+    setUploadResult(null);
+
+    const maxSize = isImage ? 2 * 1024 * 1024 : 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setUploadResult({ success: false, error: `File too large. Max ${isImage ? '2 MB' : '10 MB'}.` });
+      return;
+    }
+
+    const validation = await validateAspectRatio(file);
+    if (!validation.valid) {
+      setUploadResult({ success: false, error: validation.error });
+      return;
+    }
+
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(URL.createObjectURL(file));
+    setRatioLabel(validation.ratioLabel);
+    setPendingFile(file);
+    setModalOpen(true);
   };
 
-  const handleDragLeave = () => setIsDragging(false);
+  const handleConfirm = async (metadata) => {
+    if (!session?.id || !pendingFile) return;
+    setIsUploading(true);
 
+    const result = await uploadMedia(pendingFile, session.id, type, metadata);
+
+    if (result.success) {
+      setUploadResult({ success: true, fileName: pendingFile.name });
+    } else {
+      setUploadResult({ success: false, error: result.error });
+    }
+
+    setIsUploading(false);
+    setModalOpen(false);
+    setPendingFile(null);
+    URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+  };
+
+  const handleClose = () => {
+    setModalOpen(false);
+    setPendingFile(null);
+    if (previewUrl) { URL.revokeObjectURL(previewUrl); setPreviewUrl(null); }
+  };
+
+  const handleDragOver  = (e) => { e.preventDefault(); setIsDragging(true); };
+  const handleDragLeave = () => setIsDragging(false);
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
     const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      handleFile(files[0]);
-    }
+    if (files.length > 0) openModal(files[0]);
   };
-
-  const handleFile = async (file) => {
-    if (!session?.id) return;
-    setUploadResult(null);
-    setIsUploading(true);
-
-    const result = await uploadMedia(file, session.id, type);
-
-    if (result.success) {
-      setUploadResult({ success: true, fileName: file.name });
-    } else {
-      setUploadResult({ success: false, error: result.error });
-    }
-    setIsUploading(false);
-  };
-
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      handleFile(file);
-    }
+    if (file) openModal(file);
     e.target.value = '';
   };
 
   return (
-    <Flex direction="col" className="gap-6 max-w-2xl w-full mx-auto">
-      <input
-        type="file"
-        ref={fileInputRef}
-        accept={acceptAttr}
-        onChange={handleFileChange}
-        className="hidden"
-      />
-      {/* Drop Zone */}
-      <Box
-        role="button"
-        tabIndex={0}
-        aria-label={`Upload ${isImage ? 'image' : 'video'} files. Click or press Enter to browse.`}
-        onClick={() => fileInputRef.current?.click()}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        className={cn(
-          "rounded-2xl border-2 border-dashed transition-colors duration-200 cursor-pointer",
-          isDragging
-            ? "border-primary bg-primary/5"
-            : "border-border bg-card hover:border-primary/50 hover:bg-card/80"
-        )}
-      >
-        <Flex direction="col" align="center" justify="center" className="gap-4 py-16 px-8">
-          <Flex
-            align="center"
-            justify="center"
-            className={cn(
-              "w-16 h-16 rounded-2xl border transition-colors",
-              isDragging ? "border-primary bg-primary/10" : "border-border bg-secondary"
-            )}
-          >
-            {isUploading ? (
-              <Loader2 className="w-7 h-7 text-primary animate-spin" />
-            ) : (
+    <>
+      <Flex direction="col" className="gap-6 max-w-2xl w-full mx-auto">
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept={acceptAttr}
+          onChange={handleFileChange}
+          className="hidden"
+        />
+
+        {/* Drop Zone */}
+        <Box
+          role="button"
+          tabIndex={0}
+          aria-label={`Upload ${isImage ? 'image' : 'video'} files. Click or press Enter to browse.`}
+          onClick={() => fileInputRef.current?.click()}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={cn(
+            "rounded-2xl border-2 border-dashed transition-colors duration-200 cursor-pointer",
+            isDragging
+              ? "border-primary bg-primary/5"
+              : "border-border bg-card hover:border-primary/50 hover:bg-card/80"
+          )}
+        >
+          <Flex direction="col" align="center" justify="center" className="gap-4 py-16 px-8">
+            <Flex
+              align="center"
+              justify="center"
+              className={cn(
+                "w-16 h-16 rounded-2xl border transition-colors",
+                isDragging ? "border-primary bg-primary/10" : "border-border bg-secondary"
+              )}
+            >
               <Upload className={cn("w-7 h-7", isDragging ? "text-primary" : "text-muted-foreground")} />
-            )}
+            </Flex>
+
+            <Flex direction="col" align="center" className="gap-1">
+              <span className="text-base font-medium text-foreground">
+                {isDragging ? 'Drop to continue' : `Drag & drop ${isImage ? 'images' : 'videos'} here`}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                or click to browse files
+              </span>
+            </Flex>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+            >
+              <Icon className="w-4 h-4" />
+              Browse {isImage ? 'Images' : 'Videos'}
+            </Button>
           </Flex>
-
-          <Flex direction="col" align="center" className="gap-1">
-            <span className="text-base font-medium text-foreground">
-              {isUploading ? 'Uploading...' : isDragging ? 'Drop to upload' : `Drag & drop ${isImage ? 'images' : 'videos'} here`}
-            </span>
-            <span className="text-sm text-muted-foreground">
-              or click to browse files
-            </span>
-          </Flex>
-
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              fileInputRef.current?.click();
-            }}
-          >
-            <Icon className="w-4 h-4" />
-            Browse {isImage ? 'Images' : 'Videos'}
-          </Button>
-        </Flex>
-      </Box>
-
-      {uploadResult?.success && (
-        <Flex align="center" justify="center" className="gap-2">
-          <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-          <span className="text-sm text-green-500 font-medium">
-            {uploadResult.fileName} uploaded successfully
-          </span>
-        </Flex>
-      )}
-
-      {!uploadResult?.success && uploadResult?.error && (
-        <Box className="text-center">
-          <span className="text-sm text-red-500 font-medium">
-            {uploadResult.error}
-          </span>
         </Box>
-      )}
 
-      {/* Specs Card */}
-      <Card>
-        <CardContent className="py-4 px-5">
-          <Flex direction="col" className="gap-3">
-            <Flex align="center" className="gap-2">
-              <Info className="w-4 h-4 text-primary shrink-0" />
-              <span className="text-sm font-medium text-foreground">Upload Requirements</span>
-            </Flex>
-
-            <Separator />
-
-            <Flex direction="col" className="gap-2">
-              {[
-                { label: 'Accepted formats', value: acceptLabel },
-                { label: 'Accepted aspect ratios', value: '1:1 · 9:16 · 16:9 only' },
-                { label: 'Max file size', value: isImage ? '2 MB per image' : '10 MB per video' },
-              ].map(({ label, value }) => (
-                <Flex key={label} justify="between" align="start" className="gap-4">
-                  <span className="text-xs text-muted-foreground shrink-0">{label}</span>
-                  <span className="text-xs text-foreground text-right">{value}</span>
-                </Flex>
-              ))}
-            </Flex>
+        {uploadResult?.success && (
+          <Flex role="alert" align="center" justify="center" className="gap-2">
+            <CheckCircle className="w-4 h-4 text-green-500 shrink-0" aria-hidden="true" />
+            <span className="text-sm text-green-500 font-medium">
+              {uploadResult.fileName} uploaded successfully
+            </span>
           </Flex>
-        </CardContent>
-      </Card>
-    </Flex>
+        )}
+
+        {!uploadResult?.success && uploadResult?.error && (
+          <Box role="alert" className="text-center">
+            <span className="text-sm text-red-500 font-medium">{uploadResult.error}</span>
+          </Box>
+        )}
+
+        {/* Specs Card */}
+        <Card>
+          <CardContent className="py-4 px-5">
+            <Flex direction="col" className="gap-3">
+              <Flex align="center" className="gap-2">
+                <Info className="w-4 h-4 text-primary shrink-0" />
+                <span className="text-sm font-medium text-foreground">Upload Requirements</span>
+              </Flex>
+              <Separator />
+              <Flex direction="col" className="gap-2">
+                {[
+                  { label: 'Accepted formats',       value: acceptLabel },
+                  { label: 'Accepted aspect ratios', value: '1:1 · 9:16 · 16:9 only' },
+                  { label: 'Max file size',           value: isImage ? '2 MB per image' : '10 MB per video' },
+                ].map(({ label, value }) => (
+                  <Flex key={label} justify="between" align="start" className="gap-4">
+                    <span className="text-xs text-muted-foreground shrink-0">{label}</span>
+                    <span className="text-xs text-foreground text-right">{value}</span>
+                  </Flex>
+                ))}
+              </Flex>
+            </Flex>
+          </CardContent>
+        </Card>
+      </Flex>
+
+      <AdMetadataModal
+        open={modalOpen}
+        onClose={handleClose}
+        file={pendingFile}
+        filePreviewUrl={previewUrl}
+        ratioLabel={ratioLabel}
+        onConfirm={handleConfirm}
+        isUploading={isUploading}
+      />
+    </>
   );
 }

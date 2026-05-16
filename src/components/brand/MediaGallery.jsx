@@ -112,6 +112,30 @@ function MediaCard({ item, isVideo, onDelete, onExpand }) {
             </Badge>
           )}
         </Flex>
+        {(item.adType || item.project || (item.adPlacements?.length > 0)) && (
+          <Flex className="flex-wrap gap-1 pt-0.5">
+            {item.adType && (
+              <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 capitalize">
+                {item.adType.replace('-', ' ')}
+              </Badge>
+            )}
+            {item.project && (
+              <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 uppercase">
+                {item.project}
+              </Badge>
+            )}
+            {item.adPlacements?.map(p => (
+              <Badge key={p} variant="secondary" className="text-[9px] px-1.5 py-0 h-4 capitalize">
+                {p.replace('-', ' ')}
+              </Badge>
+            ))}
+          </Flex>
+        )}
+        {(item.adStartDate || item.adEndDate) && (
+          <span className="text-[9px] text-muted-foreground">
+            {item.adStartDate} → {item.adEndDate}
+          </span>
+        )}
       </Flex>
     </Flex>
   );

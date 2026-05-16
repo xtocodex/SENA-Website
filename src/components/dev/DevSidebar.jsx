@@ -2,6 +2,7 @@ import {
   Building2,
   ImagePlus,
   FolderGit2,
+  ClipboardList,
   LogOut,
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -12,9 +13,10 @@ import { cn } from "@/lib/utils";
 import { logout } from "@/context/AuthContext";
 
 const NAV_ITEMS = [
-  { id: 'manage-brands',    label: 'Manage Brands',      icon: Building2  },
-  { id: 'browse-media',     label: 'Browse Brand Media', icon: ImagePlus  },
-  { id: 'my-collections',   label: 'My Collections',     icon: FolderGit2 },
+  { id: 'manage-brands',    label: 'Manage Brands',      icon: Building2     },
+  { id: 'browse-media',     label: 'Browse Brand Media', icon: ImagePlus     },
+  { id: 'ad-requests',      label: 'AD Requests',        icon: ClipboardList },
+  { id: 'my-collections',   label: 'My Collections',     icon: FolderGit2    },
 ];
 
 export default function DevSidebar({ activeNav, onNavChange, sidebarOpen, onClose }) {

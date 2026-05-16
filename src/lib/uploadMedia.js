@@ -90,7 +90,7 @@ async function generateThumbnail(file, mediaType) {
   });
 }
 
-export async function uploadMedia(file, brandId, mediaType) {
+export async function uploadMedia(file, brandId, mediaType, metadata = {}) {
   try {
     const validation = await validateAspectRatio(file);
     if (!validation.valid) return { success: false, error: validation.error };
@@ -121,6 +121,8 @@ export async function uploadMedia(file, brandId, mediaType) {
       // thumbnail is best-effort — gallery falls back to full url
     }
 
+    const { adStartDate, adEndDate, adPlacements, adType, project } = metadata;
+
     await addDoc(collection(db, 'brandMedia', brandId, `${mediaType}s`), {
       fileName:     file.name,
       url:          downloadURL,
@@ -131,6 +133,11 @@ export async function uploadMedia(file, brandId, mediaType) {
       size:         file.size,
       storagePath,
       uploadedAt:   serverTimestamp(),
+      adStartDate:  adStartDate  ?? null,
+      adEndDate:    adEndDate    ?? null,
+      adPlacements: adPlacements ?? [],
+      adType:       adType       ?? null,
+      project:      project      ?? null,
     });
 
     return { success: true, url: downloadURL };

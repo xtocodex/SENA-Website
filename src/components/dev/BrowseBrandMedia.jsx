@@ -1,5 +1,34 @@
 import { useState, useEffect } from 'react';
-import { FolderPlus, X, Expand, CheckCircle } from 'lucide-react';
+import { FolderPlus, X, Expand, CheckCircle, Clock, Radio, XCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+// ─── shared status helpers (same logic as AdRequests) ─────────
+const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+function getAdStatus(item) {
+  if (!item.adStartDate || !item.adEndDate) return null;
+  const start = new Date(item.adStartDate);
+  const end   = new Date(item.adEndDate);
+  const now   = today();
+  if (now > end)    return 'expired';
+  if (now >= start) return 'active';
+  return 'upcoming';
+}
+const STATUS_META = {
+  active:   { label: 'Active',   Icon: Radio,    badgeClass: 'bg-green-500/10 text-green-500 border-green-500/20',  dotClass: 'bg-green-500 animate-pulse' },
+  upcoming: { label: 'Upcoming', Icon: Clock,    badgeClass: 'bg-blue-500/10 text-blue-400 border-blue-400/20',    dotClass: 'bg-blue-400' },
+  expired:  { label: 'Expired',  Icon: XCircle,  badgeClass: 'bg-muted text-muted-foreground border-border',        dotClass: 'bg-muted-foreground' },
+};
+function AdStatusBadge({ status }) {
+  if (!status) return null;
+  const { label, Icon, badgeClass, dotClass } = STATUS_META[status];
+  return (
+    <span className={cn('inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-medium border', badgeClass)}>
+      <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', dotClass)} aria-hidden="true" />
+      <Icon className="w-2.5 h-2.5 shrink-0" aria-hidden="true" />
+      {label}
+    </span>
+  );
+}
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -101,6 +130,14 @@ function MediaCard({ item, isSelecting, selectedItems, onToggle, showActions, on
         <span className="text-[10px] text-muted-foreground">
           {item.brandName}{item.uploadedAt?.toDate ? ` · ${item.uploadedAt.toDate().toLocaleDateString()}` : ''}
         </span>
+        {(item.adStartDate || item.adEndDate) && (
+          <Flex align="center" justify="between">
+            <span className="text-[9px] text-muted-foreground">
+              {item.adStartDate} → {item.adEndDate}
+            </span>
+            <AdStatusBadge status={getAdStatus(item)} />
+          </Flex>
+        )}
 
         {showActions && !isSelecting && (
           <Flex align="center" justify="between" className="pt-1 gap-2">
@@ -139,8 +176,11 @@ export default function BrowseBrandMedia() {
   const [brands, setBrands] = useState([]);
   const [mediaItems, setMediaItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [brandFilter, setBrandFilter] = useState('all');
-  const [formatFilter, setFormatFilter] = useState('all');
+  const [brandFilter,     setBrandFilter]     = useState('all');
+  const [formatFilter,    setFormatFilter]    = useState('all');
+  const [placementFilter, setPlacementFilter] = useState('all');
+  const [typeFilter,      setTypeFilter]      = useState('all');
+  const [projectFilter,   setProjectFilter]   = useState('all');
 
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectedItems, setSelectedItems] = useState([]);
@@ -218,8 +258,11 @@ export default function BrowseBrandMedia() {
   }, [brandFilter, brands]);
 
   const filtered = mediaItems.filter((m) => {
-    const matchFormat = formatFilter === 'all' || m.format === formatFilter;
-    return matchFormat;
+    if (formatFilter    !== 'all' && m.format !== formatFilter) return false;
+    if (placementFilter !== 'all' && !m.adPlacements?.includes(placementFilter)) return false;
+    if (typeFilter      !== 'all' && m.adType !== typeFilter) return false;
+    if (projectFilter   !== 'all' && m.project !== projectFilter) return false;
+    return true;
   });
 
   const toggleSelectMode = () => {
@@ -264,17 +307,23 @@ export default function BrowseBrandMedia() {
   const handleAddToCollection = async (item, mode, collectionName) => {
     try {
       await addDoc(collection(db, 'devCollections', 'main', `${item.format}s`), {
-        fileName: item.fileName,
-        url: item.url,
-        thumbnailUrl: item.thumbnailUrl || null,
-        ratio: item.ratio,
-        collection: collectionName,
-        type: item.format,
-        storagePath: item.storagePath,
-        sourceBrandId: item.brandId,
+        fileName:        item.fileName,
+        url:             item.url,
+        thumbnailUrl:    item.thumbnailUrl || null,
+        ratio:           item.ratio,
+        ratioLabel:      item.ratioLabel   || null,
+        collection:      collectionName,
+        type:            item.format,
+        storagePath:     item.storagePath,
+        sourceBrandId:   item.brandId,
         sourceBrandName: item.brandName,
-        sourceMoved: mode === 'move',
-        addedAt: serverTimestamp(),
+        sourceMoved:     mode === 'move',
+        addedAt:         serverTimestamp(),
+        adStartDate:     item.adStartDate  || null,
+        adEndDate:       item.adEndDate    || null,
+        adPlacements:    item.adPlacements || [],
+        adType:          item.adType       || null,
+        project:         item.project      || null,
       });
 
       if (mode === 'move') {
@@ -336,9 +385,9 @@ export default function BrowseBrandMedia() {
             </Button>
           </Flex>
         ) : (
-          <Flex align="center" className="gap-2">
+          <Flex align="center" className="gap-2 flex-wrap">
             <Select value={formatFilter} onValueChange={setFormatFilter}>
-              <SelectTrigger className="w-36">
+              <SelectTrigger className="w-32 h-9">
                 <SelectValue placeholder="All types" />
               </SelectTrigger>
               <SelectContent>
@@ -348,14 +397,47 @@ export default function BrowseBrandMedia() {
               </SelectContent>
             </Select>
             <Select value={brandFilter} onValueChange={setBrandFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by brand" />
+              <SelectTrigger className="w-40 h-9">
+                <SelectValue placeholder="All Brands" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Brands</SelectItem>
                 {brands.map((b) => (
                   <SelectItem key={b.id} value={b.id}>{b.brandName}</SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+            <Select value={placementFilter} onValueChange={setPlacementFilter}>
+              <SelectTrigger className="w-36 h-9">
+                <SelectValue placeholder="All Placements" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Placements</SelectItem>
+                <SelectItem value="in-map">In Map</SelectItem>
+                <SelectItem value="ui-board">UI Board</SelectItem>
+                <SelectItem value="interactive">Interactive</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-32 h-9">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="product-based">Product</SelectItem>
+                <SelectItem value="software-based">Software</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={projectFilter} onValueChange={setProjectFilter}>
+              <SelectTrigger className="w-32 h-9">
+                <SelectValue placeholder="All Projects" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Projects</SelectItem>
+                <SelectItem value="sena">SENA</SelectItem>
+                <SelectItem value="option2">Option 2</SelectItem>
+                <SelectItem value="option3">Option 3</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" size="sm" onClick={toggleSelectMode}>
