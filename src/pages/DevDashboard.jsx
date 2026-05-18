@@ -4,15 +4,11 @@ import { Flex } from "@/components/ui/layout";
 import DevSidebar from "@/components/dev/DevSidebar";
 import DevTopBar from "@/components/dev/DevTopBar";
 import ManageBrands from "@/components/dev/ManageBrands";
-import BrowseBrandMedia from "@/components/dev/BrowseBrandMedia";
-import MyCollections from "@/components/dev/MyCollections";
 import AdRequests from "@/components/dev/AdRequests";
 
 const CONTENT_MAP = {
-  'manage-brands':  () => <ManageBrands />,
-  'browse-media':   () => <BrowseBrandMedia />,
-  'ad-requests':    () => <AdRequests />,
-  'my-collections': () => <MyCollections />,
+  'manage-brands': () => <ManageBrands />,
+  'ad-requests':   () => <AdRequests />,
 };
 
 export default function DevDashboard() {

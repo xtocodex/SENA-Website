@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LayoutGrid, List, Clock, XCircle, FolderPlus, Expand, Radio } from 'lucide-react';
+import { LayoutGrid, List, Clock, XCircle, Expand, Radio } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -25,8 +25,113 @@ import {
 } from "@/components/ui/dialog";
 import { Flex, Grid, Box } from "@/components/ui/layout";
 import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
+
+// ─── MOCK — set false when done reviewing ────────────────────
+const USE_MOCK = true;
+
+const MOCK_BRANDS = [
+  { id: 'brand-1', brandName: 'Nike' },
+  { id: 'brand-2', brandName: 'Adidas' },
+  { id: 'brand-3', brandName: 'Puma' },
+];
+
+const MOCK_ITEMS = [
+  // ── ACTIVE (today is between start and end) ──
+  {
+    id: 'mock-1', format: 'image', brandId: 'brand-1', brandName: 'Nike',
+    fileName: 'nike_air_banner.jpg',
+    url: 'https://picsum.photos/seed/nike1/600/600',
+    thumbnailUrl: 'https://picsum.photos/seed/nike1/400/400',
+    ratio: 1, ratioLabel: '1:1', size: 1200000,
+    adStartDate: '2026-05-01', adEndDate: '2026-05-31',
+    adPlacements: ['in-map', 'ui-board'], adType: 'product-based', project: 'sena',
+  },
+  {
+    id: 'mock-2', format: 'image', brandId: 'brand-2', brandName: 'Adidas',
+    fileName: 'adidas_ultraboost.png',
+    url: 'https://picsum.photos/seed/adidas2/600/600',
+    thumbnailUrl: 'https://picsum.photos/seed/adidas2/400/400',
+    ratio: 1, ratioLabel: '1:1', size: 980000,
+    adStartDate: '2026-05-10', adEndDate: '2026-05-25',
+    adPlacements: ['interactive'], adType: 'product-based', project: 'sena',
+  },
+  {
+    id: 'mock-3', format: 'image', brandId: 'brand-3', brandName: 'Puma',
+    fileName: 'puma_software_ad.jpg',
+    url: 'https://picsum.photos/seed/puma3/600/600',
+    thumbnailUrl: 'https://picsum.photos/seed/puma3/400/400',
+    ratio: 1, ratioLabel: '1:1', size: 1500000,
+    adStartDate: '2026-05-05', adEndDate: '2026-05-28',
+    adPlacements: ['ui-board'], adType: 'software-based', project: 'option2',
+  },
+  {
+    id: 'mock-4', format: 'image', brandId: 'brand-1', brandName: 'Nike',
+    fileName: 'nike_interactive_promo.webp',
+    url: 'https://picsum.photos/seed/nike4/600/600',
+    thumbnailUrl: 'https://picsum.photos/seed/nike4/400/400',
+    ratio: 1, ratioLabel: '1:1', size: 800000,
+    adStartDate: '2026-05-12', adEndDate: '2026-05-30',
+    adPlacements: ['in-map', 'interactive'], adType: 'product-based', project: 'sena',
+  },
+  // ── UPCOMING ──
+  {
+    id: 'mock-5', format: 'image', brandId: 'brand-2', brandName: 'Adidas',
+    fileName: 'adidas_summer_launch.jpg',
+    url: 'https://picsum.photos/seed/adidas5/600/600',
+    thumbnailUrl: 'https://picsum.photos/seed/adidas5/400/400',
+    ratio: 1, ratioLabel: '1:1', size: 1100000,
+    adStartDate: '2026-06-01', adEndDate: '2026-06-30',
+    adPlacements: ['in-map'], adType: 'product-based', project: 'sena',
+  },
+  {
+    id: 'mock-6', format: 'image', brandId: 'brand-3', brandName: 'Puma',
+    fileName: 'puma_q3_campaign.png',
+    url: 'https://picsum.photos/seed/puma6/600/600',
+    thumbnailUrl: 'https://picsum.photos/seed/puma6/400/400',
+    ratio: 1, ratioLabel: '1:1', size: 950000,
+    adStartDate: '2026-06-15', adEndDate: '2026-07-15',
+    adPlacements: ['ui-board', 'interactive'], adType: 'software-based', project: 'option3',
+  },
+  {
+    id: 'mock-7', format: 'image', brandId: 'brand-1', brandName: 'Nike',
+    fileName: 'nike_back_to_school.jpg',
+    url: 'https://picsum.photos/seed/nike7/600/600',
+    thumbnailUrl: 'https://picsum.photos/seed/nike7/400/400',
+    ratio: 1, ratioLabel: '1:1', size: 1300000,
+    adStartDate: '2026-07-01', adEndDate: '2026-08-31',
+    adPlacements: ['in-map', 'ui-board', 'interactive'], adType: 'product-based', project: 'sena',
+  },
+  // ── EXPIRED ──
+  {
+    id: 'mock-8', format: 'image', brandId: 'brand-2', brandName: 'Adidas',
+    fileName: 'adidas_spring_sale.jpg',
+    url: 'https://picsum.photos/seed/adidas8/600/600',
+    thumbnailUrl: 'https://picsum.photos/seed/adidas8/400/400',
+    ratio: 1, ratioLabel: '1:1', size: 870000,
+    adStartDate: '2026-03-01', adEndDate: '2026-03-31',
+    adPlacements: ['ui-board'], adType: 'product-based', project: 'sena',
+  },
+  {
+    id: 'mock-9', format: 'image', brandId: 'brand-3', brandName: 'Puma',
+    fileName: 'puma_new_year_promo.png',
+    url: 'https://picsum.photos/seed/puma9/600/600',
+    thumbnailUrl: 'https://picsum.photos/seed/puma9/400/400',
+    ratio: 1, ratioLabel: '1:1', size: 1050000,
+    adStartDate: '2026-01-01', adEndDate: '2026-01-31',
+    adPlacements: ['interactive', 'in-map'], adType: 'other', project: 'option2',
+  },
+  {
+    id: 'mock-10', format: 'image', brandId: 'brand-1', brandName: 'Nike',
+    fileName: 'nike_valentines_day.jpg',
+    url: 'https://picsum.photos/seed/nike10/600/600',
+    thumbnailUrl: 'https://picsum.photos/seed/nike10/400/400',
+    ratio: 1, ratioLabel: '1:1', size: 760000,
+    adStartDate: '2026-02-10', adEndDate: '2026-02-15',
+    adPlacements: ['in-map'], adType: 'product-based', project: 'sena',
+  },
+];
 
 // ─── constants ───────────────────────────────────────────────
 
@@ -47,8 +152,6 @@ const PROJECT_LABELS = {
   'option2': 'Option 2',
   'option3': 'Option 3',
 };
-
-const COLLECTION_OPTIONS = ['Banner', 'Interstitial', 'Rewards'];
 
 // ─── status helpers ───────────────────────────────────────────
 
@@ -122,44 +225,10 @@ function SkeletonGrid() {
 // ─── grid card ───────────────────────────────────────────────
 
 function AdCard({ item, onExpand }) {
-  const [loaded,    setLoaded]    = useState(false);
-  const [hovered,   setHovered]   = useState(false);
-  const [addLoading, setAddLoading] = useState(false);
-  const [addedTo,   setAddedTo]   = useState(null);
-  const [destCol,   setDestCol]   = useState('Banner');
+  const [loaded,  setLoaded]  = useState(false);
+  const [hovered, setHovered] = useState(false);
   const status  = getStatus(item);
   const isVideo = item.format === 'video';
-
-  const handleAdd = async (e) => {
-    e.stopPropagation();
-    setAddLoading(true);
-    try {
-      await addDoc(collection(db, 'devCollections', 'main', `${item.format}s`), {
-        fileName:        item.fileName,
-        url:             item.url,
-        thumbnailUrl:    item.thumbnailUrl || null,
-        ratio:           item.ratio,
-        ratioLabel:      item.ratioLabel || null,
-        collection:      destCol,
-        type:            item.format,
-        storagePath:     item.storagePath,
-        sourceBrandId:   item.brandId,
-        sourceBrandName: item.brandName,
-        addedAt:         serverTimestamp(),
-        adStartDate:     item.adStartDate  || null,
-        adEndDate:       item.adEndDate    || null,
-        adPlacements:    item.adPlacements || [],
-        adType:          item.adType       || null,
-        project:         item.project      || null,
-      });
-      setAddedTo(destCol);
-      setTimeout(() => setAddedTo(null), 3000);
-    } catch (err) {
-      console.error('Error adding to collection:', err);
-    } finally {
-      setAddLoading(false);
-    }
-  };
 
   return (
     <Flex
@@ -245,30 +314,6 @@ function AdCard({ item, onExpand }) {
             {item.adStartDate} → {item.adEndDate}
           </span>
         )}
-
-        {/* Add to collection */}
-        {addedTo ? (
-          <span role="alert" className="text-[10px] text-green-500 font-medium">
-            Added to {addedTo}
-          </span>
-        ) : (
-          <Flex align="center" className="gap-1.5 pt-0.5" onClick={(e) => e.stopPropagation()}>
-            <Select value={destCol} onValueChange={setDestCol}>
-              <SelectTrigger className="flex-1 h-7 text-[11px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {COLLECTION_OPTIONS.map(c => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button variant="secondary" size="sm" className="h-7 text-[11px] gap-1 shrink-0"
-              onClick={handleAdd} disabled={addLoading}>
-              {addLoading ? '…' : <><FolderPlus className="w-3 h-3" />Add</>}
-            </Button>
-          </Flex>
-        )}
       </Flex>
     </Flex>
   );
@@ -277,41 +322,8 @@ function AdCard({ item, onExpand }) {
 // ─── table row ───────────────────────────────────────────────
 
 function AdTableRow({ item }) {
-  const [addLoading, setAddLoading] = useState(false);
-  const [addedTo,   setAddedTo]   = useState(null);
-  const [destCol,   setDestCol]   = useState('Banner');
   const status  = getStatus(item);
   const isVideo = item.format === 'video';
-
-  const handleAdd = async () => {
-    setAddLoading(true);
-    try {
-      await addDoc(collection(db, 'devCollections', 'main', `${item.format}s`), {
-        fileName:        item.fileName,
-        url:             item.url,
-        thumbnailUrl:    item.thumbnailUrl || null,
-        ratio:           item.ratio,
-        ratioLabel:      item.ratioLabel || null,
-        collection:      destCol,
-        type:            item.format,
-        storagePath:     item.storagePath,
-        sourceBrandId:   item.brandId,
-        sourceBrandName: item.brandName,
-        addedAt:         serverTimestamp(),
-        adStartDate:     item.adStartDate  || null,
-        adEndDate:       item.adEndDate    || null,
-        adPlacements:    item.adPlacements || [],
-        adType:          item.adType       || null,
-        project:         item.project      || null,
-      });
-      setAddedTo(destCol);
-      setTimeout(() => setAddedTo(null), 3000);
-    } catch (err) {
-      console.error('Error adding to collection:', err);
-    } finally {
-      setAddLoading(false);
-    }
-  };
 
   return (
     <TableRow>
@@ -361,32 +373,6 @@ function AdTableRow({ item }) {
 
       {/* Status */}
       <TableCell><StatusBadge status={status} /></TableCell>
-
-      {/* Action */}
-      <TableCell>
-        {addedTo ? (
-          <span role="alert" className="text-[10px] text-green-500 font-medium whitespace-nowrap">
-            Added to {addedTo}
-          </span>
-        ) : (
-          <Flex align="center" className="gap-1.5">
-            <Select value={destCol} onValueChange={setDestCol}>
-              <SelectTrigger className="w-24 h-7 text-[11px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {COLLECTION_OPTIONS.map(c => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button variant="secondary" size="sm" className="h-7 text-[11px] gap-1 shrink-0"
-              onClick={handleAdd} disabled={addLoading}>
-              {addLoading ? '…' : <><FolderPlus className="w-3 h-3" />Add</>}
-            </Button>
-          </Flex>
-        )}
-      </TableCell>
     </TableRow>
   );
 }
@@ -443,6 +429,12 @@ export default function AdRequests() {
   };
 
   useEffect(() => {
+    if (USE_MOCK) {
+      setBrands(MOCK_BRANDS);
+      setAllItems(MOCK_ITEMS);
+      setLoading(false);
+      return;
+    }
     (async () => {
       setLoading(true);
       const brandList = await fetchBrands();
@@ -497,7 +489,6 @@ export default function AdRequests() {
             <TableHead>Start</TableHead>
             <TableHead>End</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Add to</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
