@@ -23,7 +23,8 @@ export function AuthProvider({ children }) {
       role: userData.role,
       email: userData.email,
       id: userData.id,
-      brandName: userData.brandName || ''
+      brandName: userData.brandName || '',
+      name: userData.name || userData.brandName || userData.email || '',
     };
     localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
     setSession(sessionData);

@@ -64,7 +64,8 @@ export default function LoginPage() {
         id: snapshot.docs[0].id,
         role: role,
         email: userData.email,
-        brandName: userData.brandName || userData.name || ''
+        brandName: userData.brandName || '',
+        name: userData.name || userData.brandName || userData.email || '',
       };
 
       login(sessionData);

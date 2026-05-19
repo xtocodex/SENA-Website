@@ -1,6 +1,9 @@
 import {
   Building2,
   ClipboardList,
+  Clapperboard,
+  Target,
+  Smartphone,
   LogOut,
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -11,8 +14,11 @@ import { cn } from "@/lib/utils";
 import { logout } from "@/context/AuthContext";
 
 const NAV_ITEMS = [
-  { id: 'manage-brands', label: 'Manage Brands', icon: Building2     },
-  { id: 'ad-requests',   label: 'AD Requests',   icon: ClipboardList },
+  { id: 'manage-brands',  label: 'Manage Brands',  icon: Building2    },
+  { id: 'ad-requests',    label: 'AD Requests',    icon: ClipboardList },
+  { id: 'ad-operations',  label: 'AD Operations',  icon: Clapperboard  },
+  { id: 'missions',       label: 'Missions',        icon: Target        },
+  { id: 'app-version',    label: 'App Version',     icon: Smartphone   },
 ];
 
 export default function DevSidebar({ activeNav, onNavChange, sidebarOpen, onClose }) {

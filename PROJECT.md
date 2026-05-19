@@ -1,174 +1,156 @@
 # SENA AD — Management Platform
 
 ## Project Overview
-SENA is a **B2B ad management platform** with two distinct user roles: **Brand** users (who manage their own ad media) and **Dev/Admin** users (who manage brands and curate media collections). This is a **front-end only SPA** built with React + Vite, using mock data throughout — no backend or Firebase integration yet.
+SENA is a **B2B ad management platform** for GauravGo Games with two distinct user roles: **Brand** users (upload ad media and configure campaign metadata) and **Dev/Admin** users (review ad requests, schedule campaigns, manage missions, update app versions). The project is a React + Vite SPA backed by Firebase Firestore and Storage, with a separate Express API server for game client integration.
 
 ## Quick Start
+
+### Frontend
 ```bash
 npm install          # First time only
-npm run dev          # Dev server with HMR (default port)
+npm run dev          # Dev server with HMR
 npm run build        # Production build → dist/
 npm run preview      # Preview production build
-npm run lint         # ESLint (no custom rules configured yet)
+npm run lint         # ESLint
+```
+
+### API Server (`api/`)
+```bash
+cd api
+npm install
+cp .env.example .env  # Fill in Firebase service account credentials
+npm run dev           # nodemon — hot reload
+npm start             # Production
 ```
 
 ## Architecture
 
 ### Routing (`src/App.jsx`)
-| Route | Component | Purpose |
+| Route | Component | Access |
 |---|---|---|
-| `/` | `LoginPage` | Role selector (Brand / Dev) → login form |
-| `/brand` | `BrandDashboard` | Brand user dashboard |
-| `/dev` | `DevDashboard` | Admin/Dev dashboard |
-| `*` | Redirects to `/` | Catch-all fallback |
+| `/` | `LandingPage` | Public marketing page |
+| `/login` | `LoginPage` | Role selector + Firestore auth |
+| `/brand` | `BrandDashboard` | Protected — role=brand |
+| `/dev` | `DevDashboard` | Protected — role=dev |
+| `*` | Redirect to `/` | Catch-all fallback |
 
-### File Structure
+### Authentication
+Custom localStorage session (`sena_session`). `LoginPage` queries the `brands` or `devs` Firestore collection by email + password to authenticate. Session shape: `{ role, email, id, brandName, name }`. `logout()` clears localStorage and redirects to `/`.
+
+> **Note:** There is no Firebase Authentication — credentials are stored in Firestore. Password hashing and migration to Firebase Auth is a planned improvement.
+
+### Frontend File Structure
 ```
 src/
-├── App.jsx                          # Router setup
-├── main.jsx                         # React entry point (createRoot)
-├── index.css                        # Tailwind directives + CSS custom properties (theme)
-├── lib/utils.js                     # cn() helper (clsx + tailwind-merge)
-├── data/mockData.js                 # ALL mock data — single source of truth
+├── App.jsx                           # Router + AuthProvider + ProtectedRoute
+├── main.jsx                          # React entry point
+├── index.css                         # Tailwind directives + CSS custom properties
+├── lib/
+│   ├── utils.js                      # cn() helper (clsx + tailwind-merge)
+│   ├── firebase.js                   # Firestore + Storage client init
+│   ├── uploadMedia.js                # Firebase Storage upload helpers
+│   └── adConstants.js                # Shared: PLACEMENT_LABELS, TYPE_LABELS, PROJECT_LABELS, today()
+├── data/mockData.js                  # Legacy mock data (unused when USE_MOCK=false)
+├── context/AuthContext.jsx           # Session context + login/logout
 ├── pages/
-│   ├── LoginPage.jsx                # Role selection + auth form (mock)
-│   ├── BrandDashboard.jsx           # Brand: sidebar + upload/gallery views
-│   └── DevDashboard.jsx             # Dev: sidebar + brands/media/collections views
+│   ├── LandingPage.jsx
+│   ├── LoginPage.jsx
+│   ├── BrandDashboard.jsx
+│   └── DevDashboard.jsx
 └── components/
-    ├── ui/                          # shadcn/ui primitives (managed via CLI)
-    │   ├── alert-dialog.jsx         # Used for delete confirmation
-    │   ├── alert.jsx
-    │   ├── avatar.jsx
-    │   ├── badge.jsx
-    │   ├── button.jsx               # Variants: default, destructive, outline, secondary, ghost, link, tile
-    │   ├── card.jsx
-    │   ├── checkbox.jsx           # Used in BrowseBrandMedia multi-select
-    │   ├── dialog.jsx               # Used in Add Brand form
-    │   ├── input.jsx
-    │   ├── label.jsx
-    │   ├── layout.jsx               # Custom CVA-based primitives: Flex, Grid, Container, Box
-    │   ├── scroll-area.jsx          # Wraps main content areas
-    │   ├── select.jsx               # Used for brand/format dropdowns
-    │   ├── separator.jsx
-    │   ├── table.jsx                # Used in Manage Brands
-    │   ├── tabs.jsx                 # Used in My Collections filters
-    │   └── tooltip.jsx
-    ├── brand/                       # Brand dashboard feature components
-    │   ├── BrandSidebar.jsx         # Left nav (4 items), w-60
-    │   ├── BrandTopBar.jsx          # Shared header (wordmark + user pill)
-    │   ├── MediaGallery.jsx         # 3-column grid, hover delete, placeholder thumbnails
-    │   └── UploadZone.jsx           # Drag-and-drop zone + upload specs card
-    └── dev/                         # Dev dashboard feature components
-        ├── DevSidebar.jsx           # Left nav (3 items), w-60
-        ├── DevTopBar.jsx            # Shared header (wordmark + dev user pill)
-        ├── ManageBrands.jsx         # Table + Add Brand dialog with validation
-        ├── BrowseBrandMedia.jsx     # Brand filter + format filter + media grid
-        └── MyCollections.jsx        # Filter tabs (All/Banner/Interstitial/Rewards) + grid
+    ├── ui/                           # shadcn/ui primitives (CLI-managed)
+    ├── brand/                        # Brand dashboard feature components
+    │   ├── BrandSidebar.jsx
+    │   ├── BrandTopBar.jsx
+    │   ├── UploadZone.jsx            # Firebase Storage upload (images + videos)
+    │   └── MediaGallery.jsx          # Reads brandMedia/{id}/images|videos from Firestore
+    └── dev/                          # Dev dashboard feature components
+        ├── DevSidebar.jsx            # 5-item nav
+        ├── DevTopBar.jsx
+        ├── ManageBrands.jsx          # CRUD brands — live Firestore
+        ├── AdRequests.jsx            # Brand media with AD metadata — Run → schedule
+        ├── AdOperations.jsx          # Scheduled ad runs — read-only view
+        ├── RunScheduleModal.jsx      # Date picker modal, creates adOperations doc
+        ├── Missions.jsx              # CRUD daily/weekly missions — live Firestore
+        └── AppVersion.jsx            # Update Android/iOS app versions — live Firestore
 ```
+
+### Backend API Server (`api/`)
+A standalone Express server consumed by the game client (not the frontend). Uses Firebase Admin SDK.
+
+```
+api/
+├── index.js                          # Express app entry point (port 3000)
+├── firebaseAdmin.js                  # Admin SDK init from env vars
+├── routes/
+│   ├── missions.js                   # GET /missions/daily|weekly, POST/PUT/DELETE /missions
+│   └── versionRoutes.js              # GET /app-version
+└── services/
+    ├── missionService.js             # Firestore CRUD for missions collection
+    └── versionService.js             # Firestore read for appVersions/config
+```
+
+**Auth:** Write endpoints require `x-api-key` header matching `process.env.API_KEY`. Read endpoints are public.
+
+## Firestore Data Model
+
+| Collection / Path | Key Fields |
+|---|---|
+| `brands/{id}` | `email`, `password`, `brandName`, `name`, `createdAt`, `createdBy` |
+| `devs/{id}` | `email`, `password`, `name` |
+| `brandMedia/{brandId}/images/{id}` | `fileName`, `url`, `thumbnailUrl`, `ratio`, `adStartDate`, `adEndDate`, `adPlacements[]`, `adType`, `project`, `uploadedAt`, `runStatus` |
+| `brandMedia/{brandId}/videos/{id}` | Same as images |
+| `adOperations/{id}` | Media snapshot + `opStartDate`, `opEndDate`, `runnedBy`, `runnedAt`, `sourceMediaPath`, `runStatus: 'queued'` |
+| `missions/{id}` | `id`, `type` (daily\|weekly), `description`, `active`, `rewards[]`, `createdAt` |
+| `appVersions/config` | `android_version`, `ios_version` |
+
+## Dev Dashboard — AD Workflow
+1. Brand uploads media and fills in ad metadata (dates, placements, type, project)
+2. Dev opens **AD Requests** — sees all brand media with AD metadata, filtered by status (Active / Upcoming / Expired)
+3. Dev clicks **Run** on an item → **RunScheduleModal** opens with brand's requested dates pre-filled
+4. Dev confirms or adjusts dates → a doc is created in `adOperations` and the source media gets `runStatus: 'queued'`
+5. Dev can review all scheduled runs in **AD Operations** (Running / Upcoming / Expired tabs)
+
+> **Mock mode:** `AdRequests.jsx` and `AdOperations.jsx` both have a `USE_MOCK` constant at the top. Set to `false` to switch from mock data to live Firestore.
 
 ## Theme & Styling
 
-### CSS Custom Properties (`src/index.css`)
-Dark theme with **yellow/amber accent** (matches brand logo):
+Dark theme with yellow/amber accent (brand color):
 
 | Variable | Value | Purpose |
 |---|---|---|
 | `--background` | `hsl(30 5% 6%)` | Warm near-black |
-| `--card` | `hsl(30 4% 9%)` | Slightly elevated surface |
-| `--primary` | `hsl(42 95% 55%)` | Vivid yellow/amber — brand color |
-| `--ring` | `hsl(42 95% 55%)` | Matches primary for focus states |
-| `--foreground` | `hsl(30 5% 93%)` | Light text on dark bg |
+| `--card` | `hsl(30 4% 9%)` | Elevated surface |
+| `--primary` | `hsl(42 95% 55%)` | Yellow/amber — brand accent |
+| `--foreground` | `hsl(30 5% 93%)` | Light text |
 | `--muted-foreground` | `hsl(30 5% 55%)` | Secondary text |
-| `--destructive` | `hsl(0 63% 45%)` | Red for errors/destructive actions |
+| `--destructive` | `hsl(0 63% 45%)` | Red for errors |
 | `--border` | `hsl(30 4% 14%)` | Subtle borders |
-| `--radius` | `0.625rem (10px)` | Consistent rounded corners |
-
-All colors use HSL format via CSS variables mapped to Tailwind utilities in `tailwind.config.js`.
+| `--radius` | `0.625rem` | Rounded corners |
 
 ### Layout Primitives (`src/components/ui/layout.jsx`)
-Custom CVA-based components — **use these instead of raw Tailwind flex/grid classes**:
+CVA-based components — use these instead of raw Tailwind flex/grid:
+- `<Flex>` — direction, align, justify, wrap
+- `<Grid>` — cols, gap, animated collapse via `state`
+- `<Container>` — maxWidth
+- `<Box>` — simple wrapper div
 
-- `<Flex>` — direction: row/col, align: start/center/end/stretch/baseline, justify: start/center/end/between/around/evenly, wrap: nowrap/wrap/wrap-reverse
-- `<Grid>` — cols: 1–6/12, gap: 0–8, state: visible/hidden (animate collapse)
-- `<Container>` — maxWidth: sm/md/lg/xl/2xl/screen
-- `<Box>` — simple styled div for wrapper hooks
+### shadcn/ui
+- Config: `components.json` — `tsx: false`, CSS variables enabled, Lucide icons
+- Add components: `npx shadcn@latest add <name>`
+- `cn()` utility: `src/lib/utils.js`
 
-### shadcn/ui Conventions
-- **Config**: `components.json` → `tsx: false`, CSS variables enabled, Lucide icons
-- **Add components**: `npx shadcn@latest add <component>`
-- **`cn()` utility**: Located in `src/lib/utils.js` — merges Tailwind classes safely using `clsx` + `tailwind-merge`
-
-## Data Models (`src/data/mockData.js`)
-
-### Brand Data
-```js
-MOCK_IMAGES  // 6 items: id, filename, ratio (16:9|1:1|9:16), type (Banner|Interstitial|Rewards), size
-MOCK_VIDEOS  // 4 items: same structure as images
+## API Server Environment Variables
+Create `api/.env` with:
 ```
-
-### Dev Data
-```js
-MOCK_BRANDS         // 5 brands: id, name, email, created (YYYY-MM-DD)
-MOCK_BRAND_MEDIA    // 10 items: id, filename, ratio, type, brand, size, format (image|video)
-MOCK_DEV_COLLECTIONS // 5 items: same as brand media (dev's curated set)
+FIREBASE_PROJECT_ID=
+FIREBASE_PRIVATE_KEY_ID=
+FIREBASE_PRIVATE_KEY=
+FIREBASE_CLIENT_EMAIL=
+FIREBASE_CLIENT_ID=
+API_KEY=
+PORT=3000
 ```
-
-### Type → Badge Mapping
-```js
-RATIO_BADGE_VARIANTS = { 'Banner': 'default', 'Interstitial': 'secondary', 'Rewards': 'outline' }
-```
-
-## Key Components Detail
-
-### BrandDashboard (`/brand`)
-- **State**: `activeNav` controls view — `upload-images`, `upload-videos`, `my-images`, `my-videos`
-- **Layout**: TopBar (full-width) → Sidebar (w-60) + ScrollArea (flex-1)
-- **CONTENT_MAP**: Maps nav ID → component render function
-- Upload zone: drag-and-drop UI only (no file persistence)
-
-### DevDashboard (`/dev`)
-- **State**: `activeNav` controls view — `manage-brands`, `browse-media`, `my-collections`
-- **Layout**: Same pattern as BrandDashboard
-
-### ManageBrands
-- **Table**: Lists brands (name, email, date created) with delete action column
-- **Add Brand Dialog**: Fields — Name, Email, Phone (+91 fixed prefix), Password
-- **Validation**:
-  - Email: regex `/^[^\s@]+@[^\s@]+\.[^\s@]+$/` — shows error inline
-  - Phone: digits only, exactly 10 digits after +91 — error inline if invalid
-  - Button disabled until all fields valid
-- **Delete Brand**: Trash icon per row opens `AlertDialog` confirmation with brand name — "Are you sure you want to delete {name}? This action cannot be undone."
-- **Reset**: All form state clears on dialog close
-- **State**: Local `useState` initialized from `MOCK_BRANDS` — deletions work in-memory only
-
-### BrowseBrandMedia
-- **Dual filters**: Format (All/Images/Videos) + Brand (All/each brand)
-- **Filter logic**: AND — both conditions must match
-- **Grid**: 3-column, MediaCard with thumbnail placeholder, filename, type badge, brand name
-- **Multi-select mode**:
-  - Click "Select" button to enter selection mode (checkboxes appear on cards)
-  - Select multiple items via checkboxes (top-left on thumbnail)
-  - Selected cards highlighted with primary border
-  - Action bar replaces filters: count badge, Select All, Clear, Copy/Move dropdown, Add to Collection, Cancel (X)
-  - "Select All" only selects visible filtered items
-  - Bulk actions (Copy/Move) logged to console — no persistence yet
-
-### MyCollections
-- **Tabs**: All, Banner, Interstitial, Rewards (Button-based filter)
-- **Grid**: Same MediaCard pattern with hover delete overlay
-
-## Path Alias
-`@/*` → `./src/*` (configured in `vite.config.js` + `jsconfig.json`)
-
-## Gotchas & Known Limitations
-- **No backend**: All data is mock, no API calls or persistence
-- **No global state**: Component-level `useState` only — no Redux/Zustand/Context
-- **No ESLint config**: `eslint.config.js` does not exist — `npm run lint` uses ESLint defaults
-- **Media upload is UI only**: Drag-and-drop works but files are not saved anywhere
-- **No test suite**: No testing framework installed
-- **README.md is Vite default**: Does not reflect this project's actual purpose
-- **Phone validation is client-side only**: No server-side validation exists
-- **Brand CRUD is UI only**: Create and delete work in-memory — no API or persistence, data resets on refresh
 
 ## Tech Stack
 | Category | Technology | Version |
@@ -177,29 +159,28 @@ RATIO_BADGE_VARIANTS = { 'Banner': 'default', 'Interstitial': 'secondary', 'Rewa
 | Build Tool | Vite | 8.0.10 |
 | Routing | React Router DOM | 7.14.2 |
 | Styling | Tailwind CSS | 3.4.19 |
-| UI Components | shadcn/ui | CLI-installed primitives |
-| Radix Primitives | @radix-ui/* | Various |
+| UI Components | shadcn/ui | CLI primitives |
 | Icons | Lucide React | 1.14.0 |
-| Class Utilities | CVA + clsx + tailwind-merge | Various |
-| PostCSS | postcss + autoprefixer | 8.5.13 / 10.5.0 |
+| Firebase (client) | firebase | 12.12.1 |
+| Firebase (server) | firebase-admin | 12.0.0 |
+| API Server | Express | 4.18.2 |
+| Class Utilities | CVA + clsx + tailwind-merge | — |
 | Language | JavaScript (JSX) — no TypeScript | — |
 
 ## Conventions
-- **File naming**: PascalCase for all `.jsx` components
-- **Exports**: Default export for page/feature components
-- **State**: Local `useState` — keep it close to where it's used
-- **Layout**: Prefer `Flex`/`Grid`/`Container`/`Box` over raw Tailwind flex/grid
-- **Colors**: Always use CSS variable utilities (`bg-card`, `text-foreground`, etc.) — never hardcoded hex/HSL in components
-- **Icons**: Import from `lucide-react`
-- **Add new shadcn components**: `npx shadcn@latest add <name>` — don't manually copy files
+- **File naming:** PascalCase for all `.jsx` components
+- **Exports:** Default export for page/feature components
+- **State:** Local `useState` — keep it close to where it's used
+- **Layout:** Prefer `Flex`/`Grid`/`Container`/`Box` over raw Tailwind flex/grid
+- **Colors:** Always use CSS variable utilities (`bg-card`, `text-foreground`) — never hardcoded hex/HSL
+- **Icons:** Import from `lucide-react`
+- **Shared AD constants:** Import `PLACEMENT_LABELS`, `TYPE_LABELS`, `PROJECT_LABELS`, `today` from `src/lib/adConstants.js`
+- **Add new shadcn components:** `npx shadcn@latest add <name>` — don't copy manually
 
-## Future Work (Not Implemented)
-- Backend integration (Firebase or custom API)
-- Real authentication flow
-- File upload persistence
-- Brand edit functionality (update existing brands)
-- Media collection management (add/remove items)
-- Dev dashboard analytics
-- ESLint custom configuration
-- Test suite (unit/integration)
-- TypeScript migration (if desired)
+## Known Limitations
+- Passwords stored in plaintext in Firestore — Firebase Auth migration is planned
+- `AdRequests` and `AdOperations` use `USE_MOCK=true` — switch to `false` to go live
+- N+1 Firestore query pattern in `AdRequests.fetchAllMedia` — collectionGroup refactor planned
+- Mission ID generation has a race condition under concurrent writes — transaction-based counter planned
+- No test suite
+- No rate limiting on the Express API public routes

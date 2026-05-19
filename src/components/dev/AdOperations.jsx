@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LayoutGrid, List, Clock, XCircle, Expand, Radio, PlayCircle } from 'lucide-react';
-import { toast } from 'sonner';
+import { LayoutGrid, List, Clock, XCircle, RadioTower, UserCircle } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -26,142 +25,95 @@ import {
 } from "@/components/ui/dialog";
 import { Flex, Grid, Box } from "@/components/ui/layout";
 import { db } from '@/lib/firebase';
-import {
-  collection,
-  getDocs,
-  query,
-  orderBy,
-  addDoc,
-  doc,
-  updateDoc,
-  serverTimestamp,
-} from 'firebase/firestore';
-import { useAuth } from '@/context/AuthContext';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { PLACEMENT_LABELS, TYPE_LABELS, PROJECT_LABELS, today } from '@/lib/adConstants';
-import RunScheduleModal from '@/components/dev/RunScheduleModal';
 
 // ─── MOCK — set false when done reviewing ────────────────────
 const USE_MOCK = false;
 
-const MOCK_BRANDS = [
-  { id: 'brand-1', brandName: 'Nike' },
-  { id: 'brand-2', brandName: 'Adidas' },
-  { id: 'brand-3', brandName: 'Puma' },
-];
-
-const MOCK_ITEMS = [
-  // ── ACTIVE ──
+const MOCK_OPS = [
+  // ── RUNNING (today 2026-05-18 is between opStart and opEnd) ──
   {
-    id: 'mock-1', format: 'image', brandId: 'brand-1', brandName: 'Nike',
+    id: 'op-1', format: 'image', brandId: 'brand-1', brandName: 'Nike',
     fileName: 'nike_air_banner.jpg',
     url: 'https://picsum.photos/seed/nike1/600/600',
     thumbnailUrl: 'https://picsum.photos/seed/nike1/400/400',
-    ratio: 1, ratioLabel: '1:1', size: 1200000,
-    adStartDate: '2026-05-01', adEndDate: '2026-05-31',
     adPlacements: ['in-map', 'ui-board'], adType: 'product-based', project: 'sena',
+    adStartDate: '2026-05-01', adEndDate: '2026-05-31',
+    opStartDate: '2026-05-01', opEndDate: '2026-05-31',
+    runnedBy: 'Alex Admin', runnedAt: '2026-04-28',
   },
   {
-    id: 'mock-2', format: 'image', brandId: 'brand-2', brandName: 'Adidas',
+    id: 'op-2', format: 'image', brandId: 'brand-2', brandName: 'Adidas',
     fileName: 'adidas_ultraboost.png',
     url: 'https://picsum.photos/seed/adidas2/600/600',
     thumbnailUrl: 'https://picsum.photos/seed/adidas2/400/400',
-    ratio: 1, ratioLabel: '1:1', size: 980000,
-    adStartDate: '2026-05-10', adEndDate: '2026-05-25',
     adPlacements: ['interactive'], adType: 'product-based', project: 'sena',
+    adStartDate: '2026-05-10', adEndDate: '2026-05-25',
+    opStartDate: '2026-05-10', opEndDate: '2026-05-25',
+    runnedBy: 'Sarah Dev', runnedAt: '2026-05-09',
   },
+  // ── UPCOMING (opStart > today) ──
   {
-    id: 'mock-3', format: 'image', brandId: 'brand-3', brandName: 'Puma',
-    fileName: 'puma_software_ad.jpg',
-    url: 'https://picsum.photos/seed/puma3/600/600',
-    thumbnailUrl: 'https://picsum.photos/seed/puma3/400/400',
-    ratio: 1, ratioLabel: '1:1', size: 1500000,
-    adStartDate: '2026-05-05', adEndDate: '2026-05-28',
-    adPlacements: ['ui-board'], adType: 'software-based', project: 'option2',
-  },
-  {
-    id: 'mock-4', format: 'image', brandId: 'brand-1', brandName: 'Nike',
-    fileName: 'nike_interactive_promo.webp',
-    url: 'https://picsum.photos/seed/nike4/600/600',
-    thumbnailUrl: 'https://picsum.photos/seed/nike4/400/400',
-    ratio: 1, ratioLabel: '1:1', size: 800000,
-    adStartDate: '2026-05-12', adEndDate: '2026-05-30',
-    adPlacements: ['in-map', 'interactive'], adType: 'product-based', project: 'sena',
-  },
-  // ── UPCOMING ──
-  {
-    id: 'mock-5', format: 'image', brandId: 'brand-2', brandName: 'Adidas',
-    fileName: 'adidas_summer_launch.jpg',
-    url: 'https://picsum.photos/seed/adidas5/600/600',
-    thumbnailUrl: 'https://picsum.photos/seed/adidas5/400/400',
-    ratio: 1, ratioLabel: '1:1', size: 1100000,
-    adStartDate: '2026-06-01', adEndDate: '2026-06-30',
-    adPlacements: ['in-map'], adType: 'product-based', project: 'sena',
-  },
-  {
-    id: 'mock-6', format: 'image', brandId: 'brand-3', brandName: 'Puma',
+    id: 'op-3', format: 'image', brandId: 'brand-3', brandName: 'Puma',
     fileName: 'puma_q3_campaign.png',
     url: 'https://picsum.photos/seed/puma6/600/600',
     thumbnailUrl: 'https://picsum.photos/seed/puma6/400/400',
-    ratio: 1, ratioLabel: '1:1', size: 950000,
-    adStartDate: '2026-06-15', adEndDate: '2026-07-15',
     adPlacements: ['ui-board', 'interactive'], adType: 'software-based', project: 'option3',
+    adStartDate: '2026-06-15', adEndDate: '2026-07-15',
+    opStartDate: '2026-06-15', opEndDate: '2026-07-15',
+    runnedBy: 'Alex Admin', runnedAt: '2026-05-15',
   },
   {
-    id: 'mock-7', format: 'image', brandId: 'brand-1', brandName: 'Nike',
+    id: 'op-4', format: 'image', brandId: 'brand-1', brandName: 'Nike',
     fileName: 'nike_back_to_school.jpg',
     url: 'https://picsum.photos/seed/nike7/600/600',
     thumbnailUrl: 'https://picsum.photos/seed/nike7/400/400',
-    ratio: 1, ratioLabel: '1:1', size: 1300000,
-    adStartDate: '2026-07-01', adEndDate: '2026-08-31',
     adPlacements: ['in-map', 'ui-board', 'interactive'], adType: 'product-based', project: 'sena',
+    adStartDate: '2026-07-01', adEndDate: '2026-08-31',
+    opStartDate: '2026-07-01', opEndDate: '2026-08-31',
+    runnedBy: 'Sarah Dev', runnedAt: '2026-05-17',
   },
-  // ── EXPIRED ──
+  // ── EXPIRED (opEnd < today) ──
   {
-    id: 'mock-8', format: 'image', brandId: 'brand-2', brandName: 'Adidas',
+    id: 'op-5', format: 'image', brandId: 'brand-2', brandName: 'Adidas',
     fileName: 'adidas_spring_sale.jpg',
     url: 'https://picsum.photos/seed/adidas8/600/600',
     thumbnailUrl: 'https://picsum.photos/seed/adidas8/400/400',
-    ratio: 1, ratioLabel: '1:1', size: 870000,
-    adStartDate: '2026-03-01', adEndDate: '2026-03-31',
     adPlacements: ['ui-board'], adType: 'product-based', project: 'sena',
+    adStartDate: '2026-03-01', adEndDate: '2026-03-31',
+    opStartDate: '2026-03-01', opEndDate: '2026-03-31',
+    runnedBy: 'Alex Admin', runnedAt: '2026-02-25',
   },
   {
-    id: 'mock-9', format: 'image', brandId: 'brand-3', brandName: 'Puma',
+    id: 'op-6', format: 'image', brandId: 'brand-3', brandName: 'Puma',
     fileName: 'puma_new_year_promo.png',
     url: 'https://picsum.photos/seed/puma9/600/600',
     thumbnailUrl: 'https://picsum.photos/seed/puma9/400/400',
-    ratio: 1, ratioLabel: '1:1', size: 1050000,
-    adStartDate: '2026-01-01', adEndDate: '2026-01-31',
     adPlacements: ['interactive', 'in-map'], adType: 'other', project: 'option2',
-  },
-  {
-    id: 'mock-10', format: 'image', brandId: 'brand-1', brandName: 'Nike',
-    fileName: 'nike_valentines_day.jpg',
-    url: 'https://picsum.photos/seed/nike10/600/600',
-    thumbnailUrl: 'https://picsum.photos/seed/nike10/400/400',
-    ratio: 1, ratioLabel: '1:1', size: 760000,
-    adStartDate: '2026-02-10', adEndDate: '2026-02-15',
-    adPlacements: ['in-map'], adType: 'product-based', project: 'sena',
+    adStartDate: '2026-01-01', adEndDate: '2026-01-31',
+    opStartDate: '2026-01-01', opEndDate: '2026-01-31',
+    runnedBy: 'Sarah Dev', runnedAt: '2025-12-28',
   },
 ];
 
-// ─── status helpers ───────────────────────────────────────────
+// ─── status helpers (uses operational dates) ──────────────────
 
-function getStatus(item) {
-  if (!item.adStartDate || !item.adEndDate) return 'upcoming';
-  const start = new Date(item.adStartDate + 'T00:00:00');
-  const end   = new Date(item.adEndDate   + 'T00:00:00');
+function getOpStatus(item) {
+  if (!item.opStartDate || !item.opEndDate) return 'upcoming';
+  const start = new Date(item.opStartDate + 'T00:00:00');
+  const end   = new Date(item.opEndDate   + 'T00:00:00');
   const now   = today();
   if (now > end)    return 'expired';
-  if (now >= start) return 'active';
+  if (now >= start) return 'running';
   return 'upcoming';
 }
 
 const STATUS_META = {
-  active: {
-    label:      'Active',
-    Icon:       Radio,
+  running: {
+    label:      'Running',
+    Icon:       RadioTower,
     badgeClass: 'bg-green-500/10 text-green-500 border border-green-500/20',
     dotClass:   'bg-green-500 animate-pulse',
   },
@@ -209,62 +161,54 @@ function SkeletonGrid() {
   );
 }
 
-// ─── grid card ───────────────────────────────────────────────
+// ─── ops card ────────────────────────────────────────────────
 
-function AdCard({ item, onExpand, onRun }) {
+function OpsCard({ item, onExpand }) {
   const [loaded,  setLoaded]  = useState(false);
   const [hovered, setHovered] = useState(false);
-  const status  = getStatus(item);
+  const status  = getOpStatus(item);
   const isVideo = item.format === 'video';
-  const canRun  = status !== 'expired';
 
   return (
     <Flex
       direction="col"
-      className="rounded-xl border border-border overflow-hidden bg-card group"
+      className="rounded-xl border border-border overflow-hidden bg-card group cursor-pointer"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={() => onExpand(item)}
     >
-      {/* Thumbnail */}
-      <div className="relative cursor-pointer" onClick={() => onExpand(item)}>
-        <AspectRatio ratio={1}>
-          {!loaded && <div className="absolute inset-0 bg-muted animate-pulse" />}
+      <AspectRatio ratio={1}>
+        {!loaded && <div className="absolute inset-0 bg-muted animate-pulse" />}
 
-          {isVideo ? (
-            item.thumbnailUrl ? (
-              <img src={item.thumbnailUrl} alt={item.fileName} loading="lazy"
-                className={cn('absolute inset-0 w-full h-full object-cover transition-opacity duration-300', loaded ? 'opacity-100' : 'opacity-0')}
-                onLoad={() => setLoaded(true)} />
-            ) : (
-              <video src={item.url} muted playsInline preload="metadata"
-                className={cn('absolute inset-0 w-full h-full object-cover transition-opacity duration-300', loaded ? 'opacity-100' : 'opacity-0')}
-                onLoadedMetadata={(e) => { e.currentTarget.currentTime = 1; }}
-                onSeeked={() => setLoaded(true)} />
-            )
-          ) : (
-            <img src={item.thumbnailUrl || item.url} alt={item.fileName} loading="lazy"
+        {isVideo ? (
+          item.thumbnailUrl ? (
+            <img src={item.thumbnailUrl} alt={item.fileName} loading="lazy"
               className={cn('absolute inset-0 w-full h-full object-cover transition-opacity duration-300', loaded ? 'opacity-100' : 'opacity-0')}
               onLoad={() => setLoaded(true)} />
-          )}
+          ) : (
+            <video src={item.url} muted playsInline preload="metadata"
+              className={cn('absolute inset-0 w-full h-full object-cover transition-opacity duration-300', loaded ? 'opacity-100' : 'opacity-0')}
+              onLoadedMetadata={(e) => { e.currentTarget.currentTime = 1; }}
+              onSeeked={() => setLoaded(true)} />
+          )
+        ) : (
+          <img src={item.thumbnailUrl || item.url} alt={item.fileName} loading="lazy"
+            className={cn('absolute inset-0 w-full h-full object-cover transition-opacity duration-300', loaded ? 'opacity-100' : 'opacity-0')}
+            onLoad={() => setLoaded(true)} />
+        )}
 
-          {/* Hover expand overlay */}
-          <Flex align="center" justify="center"
-            className={cn('absolute inset-0 bg-background/60 backdrop-blur-sm transition-opacity duration-150', hovered ? 'opacity-100' : 'opacity-0')}>
-            <Button variant="secondary" size="icon" className="w-8 h-8"
-              onClick={(e) => { e.stopPropagation(); onExpand(item); }}
-              aria-label={`Preview ${item.fileName}`}>
-              <Expand className="w-3.5 h-3.5" />
-            </Button>
-          </Flex>
+        {/* Hover overlay */}
+        <Flex align="center" justify="center"
+          className={cn('absolute inset-0 bg-background/60 backdrop-blur-sm transition-opacity duration-150', hovered ? 'opacity-100' : 'opacity-0')}>
+          <span className="text-xs text-foreground font-medium">View</span>
+        </Flex>
 
-          {/* Status badge — top-left */}
-          <div className="absolute top-2 left-2">
-            <StatusBadge status={status} />
-          </div>
-        </AspectRatio>
-      </div>
+        {/* Status badge */}
+        <div className="absolute top-2 left-2">
+          <StatusBadge status={status} />
+        </div>
+      </AspectRatio>
 
-      {/* Card footer */}
       <Flex direction="col" className="gap-2 p-3">
         <Flex direction="col" className="gap-0.5">
           <span className="text-xs font-medium text-foreground truncate" title={item.fileName}>
@@ -296,39 +240,34 @@ function AdCard({ item, onExpand, onRun }) {
           )}
         </Flex>
 
-        {(item.adStartDate || item.adEndDate) && (
+        {(item.opStartDate || item.opEndDate) && (
           <span className="text-[9px] text-muted-foreground">
-            {item.adStartDate} → {item.adEndDate}
+            {item.opStartDate} → {item.opEndDate}
           </span>
         )}
 
-        {/* Run button — always visible, disabled for expired */}
-        <Button
-          size="sm"
-          className="w-full gap-1.5 mt-0.5"
-          variant={canRun ? 'default' : 'ghost'}
-          disabled={!canRun}
-          onClick={() => canRun && onRun(item)}
-          aria-label={`Run ${item.fileName}`}
-        >
-          <PlayCircle className="w-3.5 h-3.5" />
-          Run
-        </Button>
+        {/* Scheduled by */}
+        {item.runnedBy && (
+          <Flex align="center" className="gap-1 mt-0.5">
+            <UserCircle className="w-3 h-3 text-muted-foreground shrink-0" aria-hidden="true" />
+            <span className="text-[9px] text-muted-foreground truncate">
+              {item.runnedBy}
+            </span>
+          </Flex>
+        )}
       </Flex>
     </Flex>
   );
 }
 
-// ─── table row ───────────────────────────────────────────────
+// ─── ops table row ───────────────────────────────────────────
 
-function AdTableRow({ item, onRun }) {
-  const status  = getStatus(item);
+function OpsTableRow({ item }) {
+  const status  = getOpStatus(item);
   const isVideo = item.format === 'video';
-  const canRun  = status !== 'expired';
 
   return (
     <TableRow>
-      {/* Thumbnail */}
       <TableCell className="w-12 p-2">
         <div className="w-10 h-10 rounded-md overflow-hidden bg-muted shrink-0">
           {isVideo ? (
@@ -363,24 +302,16 @@ function AdTableRow({ item, onRun }) {
         {PROJECT_LABELS[item.project] ?? item.project ?? '—'}
       </TableCell>
 
-      <TableCell className="text-[10px] text-muted-foreground whitespace-nowrap">{item.adStartDate ?? '—'}</TableCell>
-      <TableCell className="text-[10px] text-muted-foreground whitespace-nowrap">{item.adEndDate ?? '—'}</TableCell>
+      <TableCell className="text-[10px] text-muted-foreground whitespace-nowrap">{item.opStartDate ?? '—'}</TableCell>
+      <TableCell className="text-[10px] text-muted-foreground whitespace-nowrap">{item.opEndDate ?? '—'}</TableCell>
 
       <TableCell><StatusBadge status={status} /></TableCell>
 
-      {/* Action */}
       <TableCell>
-        <Button
-          size="sm"
-          variant={canRun ? 'default' : 'ghost'}
-          className="gap-1.5 h-7 px-2 text-xs"
-          disabled={!canRun}
-          onClick={() => canRun && onRun(item)}
-          aria-label={`Run ${item.fileName}`}
-        >
-          <PlayCircle className="w-3 h-3" />
-          Run
-        </Button>
+        <Flex align="center" className="gap-1.5">
+          <UserCircle className="w-3.5 h-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+          <span className="text-xs text-muted-foreground whitespace-nowrap">{item.runnedBy ?? '—'}</span>
+        </Flex>
       </TableCell>
     </TableRow>
   );
@@ -390,9 +321,9 @@ function AdTableRow({ item, onRun }) {
 
 function EmptyState({ tab }) {
   const messages = {
-    active:   'No active ADs right now.',
-    upcoming: 'No upcoming ADs scheduled.',
-    expired:  'No expired ADs found.',
+    running:  'No ADs currently running.',
+    upcoming: 'No upcoming operations scheduled.',
+    expired:  'No expired operations found.',
   };
   return (
     <Flex direction="col" align="center" justify="center" className="py-24 gap-2">
@@ -403,119 +334,44 @@ function EmptyState({ tab }) {
 
 // ─── main component ───────────────────────────────────────────
 
-export default function AdRequests() {
-  const { session } = useAuth();
-  const [brands,    setBrands]    = useState([]);
-  const [allItems,  setAllItems]  = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [view,      setView]      = useState('grid');
+export default function AdOperations() {
+  const [allOps,   setAllOps]   = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [view,     setView]     = useState('grid');
   const [brandFilter,     setBrandFilter]     = useState('all');
   const [placementFilter, setPlacementFilter] = useState('all');
   const [typeFilter,      setTypeFilter]      = useState('all');
   const [projectFilter,   setProjectFilter]   = useState('all');
   const [lightboxItem,    setLightboxItem]    = useState(null);
-  const [runItem,         setRunItem]         = useState(null);
-
-  // ── fetch ──
-  const fetchBrands = async () => {
-    try {
-      const snap = await getDocs(query(collection(db, 'brands'), orderBy('brandName', 'asc')));
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch { return []; }
-  };
-
-  const fetchAllMedia = async (brandList) => {
-    let items = [];
-    for (const brand of brandList) {
-      const [imgSnap, vidSnap] = await Promise.all([
-        getDocs(query(collection(db, 'brandMedia', brand.id, 'images'), orderBy('uploadedAt', 'desc'))),
-        getDocs(query(collection(db, 'brandMedia', brand.id, 'videos'), orderBy('uploadedAt', 'desc'))),
-      ]);
-      const imgs = imgSnap.docs.map(d => ({ id: d.id, ...d.data(), format: 'image', brandId: brand.id, brandName: brand.brandName }));
-      const vids = vidSnap.docs.map(d => ({ id: d.id, ...d.data(), format: 'video', brandId: brand.id, brandName: brand.brandName }));
-      items = [...items, ...imgs, ...vids];
-    }
-    // Only show items with AD metadata that haven't been run yet
-    return items.filter(i =>
-      (i.adStartDate || i.adEndDate || i.adType || i.project) && !i.runStatus
-    );
-  };
 
   useEffect(() => {
     if (USE_MOCK) {
-      setBrands(MOCK_BRANDS);
-      setAllItems(MOCK_ITEMS);
+      setAllOps(MOCK_OPS);
       setLoading(false);
       return;
     }
     (async () => {
       setLoading(true);
-      const brandList = await fetchBrands();
-      setBrands(brandList);
-      const media = await fetchAllMedia(brandList);
-      setAllItems(media);
-      setLoading(false);
+      try {
+        const snap = await getDocs(
+          query(collection(db, 'adOperations'), orderBy('runnedAt', 'desc'))
+        );
+        setAllOps(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch {
+        setAllOps([]);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
-  // ── schedule handler ──
-  const handleSchedule = async ({ opStartDate, opEndDate }) => {
-    const item = runItem;
-    if (!item) return;
-
-    if (USE_MOCK) {
-      // Mock mode: optimistic remove only
-      setAllItems(prev => prev.filter(i => !(i.id === item.id && i.brandId === item.brandId)));
-      setRunItem(null);
-      toast.success(`"${item.fileName}" scheduled successfully.`);
-      return;
-    }
-
-    try {
-      const mediaType = item.format === 'image' ? 'images' : 'videos';
-      const sourcePath = `brandMedia/${item.brandId}/${mediaType}/${item.id}`;
-
-      // Batch: create operation doc + mark source as run
-      await addDoc(collection(db, 'adOperations'), {
-        // Display fields (snapshot)
-        url:          item.url,
-        thumbnailUrl: item.thumbnailUrl ?? null,
-        fileName:     item.fileName,
-        format:       item.format,
-        brandId:      item.brandId,
-        brandName:    item.brandName,
-        adPlacements: item.adPlacements ?? [],
-        adType:       item.adType ?? null,
-        project:      item.project ?? null,
-        // Original brand-requested dates (reference)
-        adStartDate:  item.adStartDate ?? null,
-        adEndDate:    item.adEndDate   ?? null,
-        // Admin-set operational dates
-        opStartDate,
-        opEndDate,
-        // Admin identity
-        runnedBy:     session?.name  || session?.email || 'Unknown',
-        runnedById:   session?.id    || null,
-        runnedAt:     serverTimestamp(),
-        // Reference back to source
-        sourceMediaId:   item.id,
-        sourceMediaPath: sourcePath,
-        runStatus:       'queued',
-      });
-
-      await updateDoc(doc(db, sourcePath), { runStatus: 'queued' });
-
-      setAllItems(prev => prev.filter(i => !(i.id === item.id && i.brandId === item.brandId)));
-      setRunItem(null);
-      toast.success(`"${item.fileName}" scheduled successfully.`);
-    } catch (err) {
-      toast.error(`Failed to schedule: ${err.message}`);
-      throw err;
-    }
-  };
+  // Derive brand list from loaded ops (no extra fetch needed)
+  const brands = Array.from(
+    new Map(allOps.map(o => [o.brandId, o.brandName])).entries()
+  ).map(([id, brandName]) => ({ id, brandName }));
 
   // ── filter pipeline ──
-  const filtered = allItems.filter(item => {
+  const filtered = allOps.filter(item => {
     if (brandFilter     !== 'all' && item.brandId !== brandFilter) return false;
     if (placementFilter !== 'all' && !item.adPlacements?.includes(placementFilter)) return false;
     if (typeFilter      !== 'all' && item.adType !== typeFilter) return false;
@@ -524,9 +380,9 @@ export default function AdRequests() {
   });
 
   const byStatus = {
-    active:   filtered.filter(i => getStatus(i) === 'active'),
-    upcoming: filtered.filter(i => getStatus(i) === 'upcoming'),
-    expired:  filtered.filter(i => getStatus(i) === 'expired'),
+    running:  filtered.filter(i => getOpStatus(i) === 'running'),
+    upcoming: filtered.filter(i => getOpStatus(i) === 'upcoming'),
+    expired:  filtered.filter(i => getOpStatus(i) === 'expired'),
   };
 
   // ── content renderers ──
@@ -536,12 +392,7 @@ export default function AdRequests() {
     return (
       <Grid gap={3} className="w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
         {items.map(item => (
-          <AdCard
-            key={`${item.brandId}-${item.id}`}
-            item={item}
-            onExpand={setLightboxItem}
-            onRun={setRunItem}
-          />
+          <OpsCard key={item.id} item={item} onExpand={setLightboxItem} />
         ))}
       </Grid>
     );
@@ -564,16 +415,12 @@ export default function AdRequests() {
               <TableHead>Start</TableHead>
               <TableHead>End</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Action</TableHead>
+              <TableHead>Scheduled By</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {items.map(item => (
-              <AdTableRow
-                key={`${item.brandId}-${item.id}`}
-                item={item}
-                onRun={setRunItem}
-              />
+              <OpsTableRow key={item.id} item={item} />
             ))}
           </TableBody>
         </Table>
@@ -589,7 +436,7 @@ export default function AdRequests() {
 
       {/* Header */}
       <Flex align="start" justify="between" className="gap-3 flex-wrap">
-        <h2 className="text-lg font-semibold text-foreground">AD Requests</h2>
+        <h2 className="text-lg font-semibold text-foreground">AD Operations</h2>
 
         <Flex align="center" className="gap-2 flex-wrap">
           <Select value={brandFilter} onValueChange={setBrandFilter}>
@@ -665,14 +512,14 @@ export default function AdRequests() {
       </Flex>
 
       {/* Tabs */}
-      <Tabs defaultValue="active">
+      <Tabs defaultValue="running">
         <TabsList className="mb-4">
-          <TabsTrigger value="active" className="gap-2">
+          <TabsTrigger value="running" className="gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" aria-hidden="true" />
-            Active
+            Running
             {!loading && (
               <Badge variant="secondary" className="ml-1 text-[9px] px-1.5 py-0 h-4">
-                {byStatus.active.length}
+                {byStatus.running.length}
               </Badge>
             )}
           </TabsTrigger>
@@ -698,8 +545,8 @@ export default function AdRequests() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="active">
-          {renderContent(byStatus.active, 'active')}
+        <TabsContent value="running">
+          {renderContent(byStatus.running, 'running')}
         </TabsContent>
         <TabsContent value="upcoming">
           {renderContent(byStatus.upcoming, 'upcoming')}
@@ -726,10 +573,16 @@ export default function AdRequests() {
                 <Flex direction="col" className="gap-1">
                   <span className="text-sm font-medium text-foreground">{lightboxItem.fileName}</span>
                   <span className="text-xs text-muted-foreground">{lightboxItem.brandName}</span>
+                  {lightboxItem.runnedBy && (
+                    <Flex align="center" className="gap-1 mt-0.5">
+                      <UserCircle className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />
+                      <span className="text-xs text-muted-foreground">{lightboxItem.runnedBy}</span>
+                    </Flex>
+                  )}
                 </Flex>
 
                 <Flex className="flex-wrap gap-1.5 shrink-0">
-                  <StatusBadge status={getStatus(lightboxItem)} />
+                  <StatusBadge status={getOpStatus(lightboxItem)} />
                   {lightboxItem.adPlacements?.map(p => (
                     <Badge key={p} variant="secondary" className="text-xs">{PLACEMENT_LABELS[p] ?? p}</Badge>
                   ))}
@@ -739,9 +592,9 @@ export default function AdRequests() {
                   {lightboxItem.project && (
                     <Badge variant="outline" className="text-xs uppercase">{PROJECT_LABELS[lightboxItem.project]}</Badge>
                   )}
-                  {(lightboxItem.adStartDate || lightboxItem.adEndDate) && (
+                  {(lightboxItem.opStartDate || lightboxItem.opEndDate) && (
                     <span className="text-xs text-muted-foreground self-center">
-                      {lightboxItem.adStartDate} → {lightboxItem.adEndDate}
+                      {lightboxItem.opStartDate} → {lightboxItem.opEndDate}
                     </span>
                   )}
                 </Flex>
@@ -750,14 +603,6 @@ export default function AdRequests() {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Schedule modal */}
-      <RunScheduleModal
-        item={runItem}
-        open={!!runItem}
-        onClose={() => setRunItem(null)}
-        onSchedule={handleSchedule}
-      />
 
     </Flex>
   );

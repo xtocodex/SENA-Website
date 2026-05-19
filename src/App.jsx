@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import { AuthProvider, SESSION_KEY } from '@/context/AuthContext';
 import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/LoginPage';
@@ -27,6 +28,7 @@ function ProtectedRoute({ role, children }) {
 export default function App() {
   return (
     <AuthProvider>
+      <Toaster richColors position="bottom-right" />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingPage />} />
