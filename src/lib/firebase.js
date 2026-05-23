@@ -3,15 +3,15 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCscFIlUxTIMM3FgLqFfD2jHd-MLk_65zo",
-  authDomain: "brand-advertisement-website.firebaseapp.com",
-  projectId: "brand-advertisement-website",
-  storageBucket: "brand-advertisement-website.firebasestorage.app",
-  messagingSenderId: "293320927574",
-  appId: "1:293320927574:web:d0a0c25429c6161754cef7",
-  measurementId: "G-Y2XDC702J7"
+  apiKey: "AIzaSyDA_Ge9JNtIIQOH4jJ99ll-vRcNb4Llfwc",
+  authDomain: "crucial-summer-456605-p8.firebaseapp.com",
+  projectId: "crucial-summer-456605-p8",
+  storageBucket: "crucial-summer-456605-p8.firebasestorage.app",
+  messagingSenderId: "332405485338",
+  appId: "1:332405485338:web:42b32a4ffc90827ccd46a3"
 };
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+ 
