@@ -140,6 +140,31 @@ const CSS = `
       transition: none;
     }
   }
+
+  /* ─── Partner & Influencer Sections ─────────────────────── */
+  @keyframes marquee {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .marquee-track { animation: marquee 40s linear infinite; will-change: transform; }
+  .marquee-wrap:hover .marquee-track { animation-play-state: paused; }
+
+  .partner-logo-card { transition: transform .3s, border-color .3s, box-shadow .3s; }
+  .partner-logo-card:hover {
+    transform: translateY(-3px) scale(1.03);
+    border-color: rgba(255,215,0,.55) !important;
+    box-shadow: 0 8px 28px rgba(255,215,0,.14);
+  }
+  .video-card { transition: transform .3s, box-shadow .3s, border-color .3s; }
+  .video-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 36px rgba(255,215,0,.2);
+    border-color: rgba(255,215,0,.5) !important;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-track { animation: none; }
+    .partner-logo-card, .video-card { transition: none; }
+  }
 `;
 
 /* ─── Data ───────────────────────────────────────────────── */
@@ -265,6 +290,78 @@ const FAQS = [
   },
 ];
 
+/* ─── Partner & Influencer Data ──────────────────────────── */
+const BRAND_PARTNER_SLOTS = [
+  { name: 'AFW',             logo: '/logos/brand/Afw.jpeg'             },
+  { name: 'Amazon',          logo: '/logos/brand/amazon.jpeg'          },
+  { name: 'Astory',          logo: '/logos/brand/Astory.jpeg'          },
+  { name: 'Avethi',          logo: '/logos/brand/Avethi.jpeg'          },
+  { name: 'Belora',          logo: '/logos/brand/Belora.jpeg'          },
+  { name: 'Bira',            logo: '/logos/brand/bira.jpeg'            },
+  { name: "Cai's",           logo: "/logos/brand/Cai's.jpeg"           },
+  { name: 'CivilGuruji',     logo: '/logos/brand/CivilGuruji.jpeg'     },
+  { name: 'Colors',          logo: '/logos/brand/colors.jpeg'          },
+  { name: 'Coolberg',        logo: '/logos/brand/Coolberg.jpeg'        },
+  { name: 'Craftsman',       logo: '/logos/brand/Craftsman.jpeg'       },
+  { name: 'CrumbO',          logo: '/logos/brand/CrumbO.jpeg'          },
+  { name: 'Filling',         logo: '/logos/brand/Filling.jpeg'         },
+  { name: 'FlexifyMe',       logo: '/logos/brand/flexifyme.jpeg'       },
+  { name: 'Fydo',            logo: '/logos/brand/fydo.jpeg'            },
+  { name: 'Herbelle',        logo: '/logos/brand/herbelle.jpeg'        },
+  { name: 'KalaKart',        logo: '/logos/brand/KalaKart.jpeg'        },
+  { name: 'Kavya',           logo: '/logos/brand/Kavya.jpeg'           },
+  { name: 'LokalApp',        logo: '/logos/brand/LokalApp.jpeg'        },
+  { name: 'Necafe',          logo: '/logos/brand/necafe.jpeg'          },
+  { name: 'Online Shop',     logo: '/logos/brand/Online-shop.jpeg'     },
+  { name: 'Rain',            logo: '/logos/brand/rain.jpeg'            },
+  { name: 'Shadowfox',       logo: '/logos/brand/Shadowfox.jpeg'       },
+  { name: 'SR Creations',    logo: '/logos/brand/SR-creations.jpeg'    },
+  { name: 'Startup Concept', logo: '/logos/brand/StartupConcept.jpeg'  },
+  { name: 'StepOne',         logo: '/logos/brand/stepone.jpeg'         },
+  { name: 'Suidhaga',        logo: '/logos/brand/Suidhaga.jpeg'        },
+  { name: 'Swaay',           logo: '/logos/brand/Swaay.jpeg'           },
+  { name: 'Technook',        logo: '/logos/brand/Technook.jpeg'        },
+  { name: 'TRP',             logo: '/logos/brand/trp.jpeg'             },
+  { name: 'Urban',           logo: '/logos/brand/Urban.jpeg'           },
+  { name: 'Urbanwood',       logo: '/logos/brand/urbanwood.jpeg'       },
+  { name: 'Vedic Science',   logo: '/logos/brand/vedic-sceince.jpeg'   },
+  { name: 'WOW',             logo: '/logos/brand/wow.jpeg'             },
+  { name: 'Zaocare',         logo: '/logos/brand/zaocare.jpeg'         },
+];
+
+const ESPORTS_PARTNER_SLOTS = [
+  { label: 'JSS University, Noida',        logo: '/logos/esports/jss-university.png' },
+  { label: 'NSU, Jamshedpur',              logo: '/logos/esports/nsu.png'            },
+  { label: 'RIT, Berhampur',               logo: '/logos/esports/rit.png'            },
+  { label: 'BIT, Gorakhpur',               logo: '/logos/esports/bit.png'            },
+  { label: 'EATM, Bhubaneswar',            logo: '/logos/esports/eatm.jpeg'          },
+  { label: 'DRIEMS University, Cuttack',   logo: '/logos/esports/driems.jpeg'        },
+  { label: 'SITAM, Vizianagaram',          logo: '/logos/esports/sitam.png'          },
+  { label: 'CGU, Bhubaneswar',             logo: '/logos/esports/cgu.jpg'            },
+];
+
+const INFLUENCER_VIDEOS = [
+  'https://www.youtube.com/embed/CZmWJHI1D1E',
+  'https://www.youtube.com/embed/JyTpGVunwd8',
+  'https://www.youtube.com/embed/-L21_fUI63w',
+  'https://www.youtube.com/embed/R-sYWJZFxeQ',
+  'https://www.youtube.com/embed/1CfXSix-2rs',
+  'https://www.youtube.com/embed/X_PVPtJp0qw',
+  'https://www.youtube.com/embed/rTj67Olz8Yc',
+  'https://www.youtube.com/embed/kY1qX-j577Q',
+  'https://www.youtube.com/embed/8aouiF_US2Q',
+  'https://www.youtube.com/embed/5TfJ6iX1M48',
+  'https://www.youtube.com/embed/Q1icCkKoMYM',
+  'https://www.youtube.com/embed/Dns3n-B3g6k',
+  'https://www.youtube.com/embed/7wMvbPLp_tI',
+  'https://www.youtube.com/embed/2YEN2Ij9bWk',
+  'https://www.youtube.com/embed/SnQ9aNtkLWA',
+  'https://www.youtube.com/embed/r5-OHwboGb8',
+  'https://www.youtube.com/embed/BuceFNbecDM',
+  'https://www.youtube.com/embed/qioF-mr7YU4?si=hkxcLENpU31WiM9m',
+  'https://www.youtube.com/embed/RT8-OIKIqck?si=yGE-vA9NsixWuOjh',
+];
+
 /* ─── Shared Atoms ───────────────────────────────────────── */
 function Pill({ children }) {
   return (
@@ -375,15 +472,6 @@ function Navbar({ scrolled }) {
           >
             SENA Login
           </button>
-          <button
-            className="px-5 py-2 text-sm font-bold rounded-lg cursor-pointer border-0"
-            style={{ background: `linear-gradient(135deg, ${C.gold}, ${C.orange})`, color: '#0a0a0a' }}
-            onClick={() => scrollTo('contact')}
-            onMouseEnter={e => { e.currentTarget.style.opacity = '.88'; }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-          >
-            Book a Demo
-          </button>
         </div>
 
         {/* Hamburger */}
@@ -423,13 +511,6 @@ function Navbar({ scrolled }) {
             onClick={() => navigate('/login')}
           >
             SENA Login
-          </button>
-          <button
-            className="px-5 py-2.5 text-sm font-bold rounded-lg cursor-pointer border-0"
-            style={{ background: `linear-gradient(135deg, ${C.gold}, ${C.orange})`, color: '#0a0a0a' }}
-            onClick={() => { setOpen(false); scrollTo('contact'); }}
-          >
-            Book a Demo
           </button>
         </div>
       </div>
@@ -498,15 +579,6 @@ function Hero() {
         </p>
 
         <div className="fade4 flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            onClick={() => scrollTo('contact')}
-            className="flex items-center justify-center gap-2 px-8 py-3.5 text-base font-bold rounded-xl cursor-pointer border-0 transition-all duration-300"
-            style={{ background: `linear-gradient(135deg, ${C.gold}, ${C.orange})`, color: '#0a0a0a' }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 14px 36px rgba(255,215,0,.30)`; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-          >
-            Book a Demo <ArrowRight size={17} />
-          </button>
           <button
             onClick={() => scrollTo('how-it-works')}
             className="btn-outline flex items-center justify-center gap-2 px-8 py-3.5 text-base font-bold rounded-xl cursor-pointer transition-all duration-300"
@@ -577,52 +649,31 @@ function IndustryInsight() {
               non-skippable ways. They're pouring money into banner ads that get ignored and
               influencer deals that are forgotten in 48 hours.
             </p>
-            <p className="text-base leading-relaxed" style={{ color: C.muted }}>
-              <strong className="text-white font-semibold">SENA bridges this gap.</strong>{' '}
-              We connect studios and brands through a real-rewards economy — so players win,
-              studios earn, and brands build genuine affinity with a captive audience.
-            </p>
-
-            <div className="mt-8 flex items-center gap-3">
-              <div className="h-1 w-12 rounded-full" style={{ background: `linear-gradient(90deg, ${C.gold}, ${C.orange})` }} />
-              <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: C.gold }}>
-                The SENA Solution
-              </span>
-            </div>
           </div>
 
-          {/* Video placeholder */}
+          {/* Demo video */}
           <div
-            className="rounded-2xl flex flex-col items-center justify-center cursor-pointer group"
+            className="rounded-2xl overflow-hidden"
             style={{
-              background: '#0d0d0d',
               border: `2px solid rgba(255,215,0,.22)`,
-              minHeight: 280,
-              boxShadow: '0 0 60px rgba(255,215,0,.06)',
-              transition: 'border-color .3s, box-shadow .3s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = 'rgba(255,215,0,.5)';
-              e.currentTarget.style.boxShadow = '0 0 60px rgba(255,215,0,.14)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = 'rgba(255,215,0,.22)';
-              e.currentTarget.style.boxShadow = '0 0 60px rgba(255,215,0,.06)';
+              boxShadow: '0 0 60px rgba(255,215,0,.08)',
             }}
           >
-            <div
-              className="flex items-center justify-center rounded-full mb-4"
-              style={{
-                width: 72, height: 72,
-                background: 'rgba(255,215,0,.12)',
-                border: `2px solid rgba(255,215,0,.35)`,
-                transition: 'background .3s',
-              }}
-            >
-              <Play size={32} color={C.gold} strokeWidth={2} fill={C.gold} />
+            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
+              <iframe
+                src="https://www.youtube.com/embed/Mwd15bFsqLE"
+                title="SENA Demo Video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                style={{
+                  position: 'absolute',
+                  top: 0, left: 0,
+                  width: '100%', height: '100%',
+                  border: 'none',
+                  display: 'block',
+                }}
+              />
             </div>
-            <p className="text-sm font-semibold" style={{ color: C.gold }}>Watch how SENA helps</p>
-            <p className="text-xs mt-1" style={{ color: C.muted }}>90 seconds</p>
           </div>
         </div>
       </div>
@@ -925,6 +976,192 @@ function FAQ() {
               </div>
             );
           })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Brand Partners ─────────────────────────────────────── */
+function BrandPartners() {
+  const doubled = [...BRAND_PARTNER_SLOTS, ...BRAND_PARTNER_SLOTS];
+  const duration = `${Math.round(BRAND_PARTNER_SLOTS.length * 2.8)}s`;
+
+  return (
+    <section className="py-24 px-6" style={{ background: C.bg }}>
+      <div className="max-w-6xl mx-auto">
+        <SectionHeading pill="Brand Partners">
+          Our <span style={{ color: C.gold }}>Brand Partners</span>
+        </SectionHeading>
+
+        {/* 100+ badge */}
+        <div className="flex items-center justify-center gap-3 mb-10 -mt-6">
+          <div
+            className="flex items-center gap-2 px-5 py-2 rounded-full"
+            style={{ background: 'rgba(255,215,0,.08)', border: '1px solid rgba(255,215,0,.22)' }}
+          >
+            <span className="text-xl font-black" style={{ color: C.gold }}>100+</span>
+            <span className="text-sm font-semibold" style={{ color: C.muted }}>Brands & Growing</span>
+          </div>
+        </div>
+
+        <div
+          className="marquee-wrap relative overflow-hidden"
+          style={{
+            WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)',
+            maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)',
+          }}
+        >
+          <div
+            className="marquee-track flex"
+            style={{ gap: 20, width: 'max-content', animationDuration: duration }}
+          >
+            {doubled.map(({ name, logo }, i) => (
+              <div
+                key={i}
+                className="partner-logo-card flex-shrink-0 flex flex-col items-center justify-center gap-2 rounded-2xl cursor-default"
+                style={{
+                  width: 148,
+                  height: 110,
+                  background: C.card,
+                  border: '1px solid rgba(255,215,0,.16)',
+                  padding: '12px 10px 10px',
+                }}
+              >
+                <div
+                  className="flex items-center justify-center rounded-lg overflow-hidden flex-shrink-0"
+                  style={{ width: 58, height: 58, background: 'rgba(255,255,255,.92)' }}
+                >
+                  <img
+                    src={logo}
+                    alt={name}
+                    loading="lazy"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 5 }}
+                  />
+                </div>
+                <span
+                  style={{
+                    color: C.muted,
+                    fontSize: 9,
+                    fontWeight: 700,
+                    letterSpacing: '.05em',
+                    textAlign: 'center',
+                    lineHeight: 1.3,
+                    maxWidth: 124,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {name}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Esports & Community Partners ──────────────────────── */
+function EsportsPartners() {
+  return (
+    <section className="py-24 px-6" style={{ background: C.bgAlt }}>
+      <div className="max-w-6xl mx-auto">
+        <SectionHeading pill="Esports & Community">
+          Esports Community{' '}
+          <span style={{ color: C.gold }}>& Partners</span>
+        </SectionHeading>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+          {ESPORTS_PARTNER_SLOTS.map(({ label, logo }, i) => (
+            <div
+              key={i}
+              className="partner-logo-card flex flex-col items-center justify-center gap-3 rounded-2xl cursor-default py-6 px-4"
+              style={{
+                background: C.card,
+                border: '1px solid rgba(255,215,0,.18)',
+                minHeight: 130,
+              }}
+            >
+              <div
+                className="flex items-center justify-center rounded-xl overflow-hidden"
+                style={{ width: 64, height: 64, background: 'rgba(255,255,255,.06)', flexShrink: 0 }}
+              >
+                <img
+                  src={logo}
+                  alt={label}
+                  loading="lazy"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 6 }}
+                />
+              </div>
+              <span
+                style={{
+                  color: C.muted,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: '.04em',
+                  textAlign: 'center',
+                  lineHeight: 1.5,
+                }}
+              >
+                {label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Influencer Partners ────────────────────────────────── */
+function InfluencerPartners() {
+  return (
+    <section className="py-24 px-6" style={{ background: C.bg }}>
+      <div className="max-w-7xl mx-auto">
+        <SectionHeading pill="Influencer Partners">
+          Our {' '}
+          <span style={{ color: C.gold }}>Influencer</span>
+        </SectionHeading>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
+            gap: 20,
+          }}
+        >
+          {INFLUENCER_VIDEOS.map((src, i) => (
+            <div
+              key={i}
+              className="video-card rounded-2xl overflow-hidden"
+              style={{
+                background: C.card,
+                border: '1px solid rgba(255,215,0,.14)',
+              }}
+            >
+              <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
+                <iframe
+                  src={src}
+                  title={`Influencer video ${i + 1}`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  loading="lazy"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    border: 'none',
+                    display: 'block',
+                  }}
+                />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -1359,9 +1596,10 @@ export default function LandingPage() {
       <IntegrationDetails />
       <WhyChooseUs />
       <Testimonials />
+      <BrandPartners />
+      <EsportsPartners />
+      <InfluencerPartners />
       <FAQ />
-      <FooterCTA />
-      <DemoForm />
       <Footer />
       <ScrollToTop />
     </div>
