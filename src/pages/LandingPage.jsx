@@ -168,7 +168,7 @@ const CSS = `
 `;
 
 /* ─── Data ───────────────────────────────────────────────── */
-const NAV_LINKS = ['Home', 'About', 'Games', 'Services', 'Contact'];
+const NAV_LINKS = ['Home', 'About', 'Games', 'Services', 'Brand Partners', 'Esports & Community', 'Influencer Partners'];
 
 const PARTICLES = [
   { l:'7%',  t:'68%', s:3, d:'0s',   dur:'8s'  },
@@ -182,7 +182,7 @@ const PARTICLES = [
 ];
 
 const STATS_BAR = [
-  { val: '10+',  label: 'Studios'       },
+  
   { val: '100+', label: 'Brands'        },
   { val: '₹5L+', label: 'Monthly GMV'  },
 ];
@@ -391,7 +391,12 @@ function Divider() {
 }
 
 /* ─── Navbar ─────────────────────────────────────────────── */
-const SECTION_MAP = { Home: 'home', About: 'about', Games: 'games', Services: 'services', Contact: 'contact' };
+const SECTION_MAP = {
+  Home: 'home', About: 'about', Games: 'games', Services: 'services',
+  'Brand Partners': 'brand-partners',
+  'Esports & Community': 'esports-community',
+  'Influencer Partners': 'influencer-partners',
+};
 
 function Navbar({ scrolled }) {
   const [open, setOpen] = useState(false);
@@ -399,7 +404,7 @@ function Navbar({ scrolled }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const ids = ['home', 'about', 'games', 'services', 'contact'];
+    const ids = ['home', 'about', 'games', 'services', 'brand-partners', 'esports-community', 'influencer-partners'];
     const observers = ids.map(id => {
       const el = document.getElementById(id);
       if (!el) return null;
@@ -456,7 +461,7 @@ function Navbar({ scrolled }) {
               key={l}
               className="nav-link text-sm font-medium bg-transparent border-0 cursor-pointer p-0"
               style={{ color: SECTION_MAP[l] === activeSection ? C.gold : C.muted }}
-              onClick={() => scrollTo(l.toLowerCase())}
+              onClick={() => scrollTo(SECTION_MAP[l])}
             >
               {l}
             </button>
@@ -500,7 +505,7 @@ function Navbar({ scrolled }) {
               key={l}
               className="nav-link text-left text-base font-medium bg-transparent border-0 cursor-pointer py-1"
               style={{ color: C.muted }}
-              onClick={() => scrollTo(l.toLowerCase())}
+              onClick={() => scrollTo(SECTION_MAP[l])}
             >
               {l}
             </button>
@@ -988,7 +993,7 @@ function BrandPartners() {
   const duration = `${Math.round(BRAND_PARTNER_SLOTS.length * 2.8)}s`;
 
   return (
-    <section className="py-24 px-6" style={{ background: C.bg }}>
+    <section id="brand-partners" className="py-24 px-6" style={{ background: C.bg }}>
       <div className="max-w-6xl mx-auto">
         <SectionHeading pill="Brand Partners">
           Our <span style={{ color: C.gold }}>Brand Partners</span>
@@ -1067,7 +1072,7 @@ function BrandPartners() {
 /* ─── Esports & Community Partners ──────────────────────── */
 function EsportsPartners() {
   return (
-    <section className="py-24 px-6" style={{ background: C.bgAlt }}>
+    <section id="esports-community" className="py-24 px-6" style={{ background: C.bgAlt }}>
       <div className="max-w-6xl mx-auto">
         <SectionHeading pill="Esports & Community">
           Esports Community{' '}
@@ -1119,7 +1124,7 @@ function EsportsPartners() {
 /* ─── Influencer Partners ────────────────────────────────── */
 function InfluencerPartners() {
   return (
-    <section className="py-24 px-6" style={{ background: C.bg }}>
+    <section id="influencer-partners" className="py-24 px-6" style={{ background: C.bg }}>
       <div className="max-w-7xl mx-auto">
         <SectionHeading pill="Influencer Partners">
           Our {' '}
@@ -1478,11 +1483,13 @@ function DemoForm() {
 
 /* ─── Footer ─────────────────────────────────────────────── */
 const FOOTER_NAV = [
-  { label: 'Home',     id: 'home'    },
-  { label: 'About',    id: 'about'   },
-  { label: 'Games',    id: 'games'   },
-  { label: 'Services', id: 'services'},
-  { label: 'Contact',  id: 'contact' },
+  { label: 'Home',                id: 'home'                },
+  { label: 'About',               id: 'about'               },
+  { label: 'Games',               id: 'games'               },
+  { label: 'Services',            id: 'services'            },
+  { label: 'Brand Partners',      id: 'brand-partners'      },
+  { label: 'Esports & Community', id: 'esports-community'   },
+  { label: 'Influencer Partners', id: 'influencer-partners' },
 ];
 
 function Footer() {
