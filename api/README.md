@@ -1,6 +1,6 @@
 # SENA Game API
 
-Node.js + Express server that serves game data (missions, app version) from Firestore to the game app.
+Node.js + Express server that serves game data (missions, players, app version) from Firestore to the game app.
 
 ## Setup
 
@@ -48,6 +48,27 @@ npm run dev
 
 ---
 
+## Docker
+
+```bash
+# Build
+docker build -t sena-api .
+
+# Run (pass env vars at runtime)
+docker run -p 8080:8080 \
+  -e API_KEY=your_key \
+  -e FIREBASE_PROJECT_ID=your_project \
+  -e FIREBASE_PRIVATE_KEY_ID=your_key_id \
+  -e FIREBASE_PRIVATE_KEY="your_private_key" \
+  -e FIREBASE_CLIENT_EMAIL=your_client_email \
+  -e FIREBASE_CLIENT_ID=your_client_id \
+  sena-api
+```
+
+Exposes port `8080` (matches Cloud Run default).
+
+---
+
 ## Endpoints
 
 ### Public (no auth required)
@@ -66,6 +87,11 @@ npm run dev
 | `POST` | `/missions` | Create a new mission |
 | `PUT` | `/missions/:docId` | Update a mission by Firestore doc ID |
 | `DELETE` | `/missions/:docId` | Delete a mission by Firestore doc ID |
+| `GET` | `/players` | List all players |
+| `GET` | `/players/:id` | Get a single player by ID |
+| `POST` | `/players` | Create a new player |
+| `PATCH` | `/players/:id` | Update player fields |
+| `DELETE` | `/players/:id` | Delete a player |
 
 ---
 
@@ -100,15 +126,70 @@ npm run dev
 
 ```json
 {
+  "id": "daily_003",
   "type": "daily",
   "description": "Win 3 matches in a row",
   "rewards": [{ "type": "coins", "amount": 500 }],
+  "value": 100,
   "active": true
 }
 ```
 
-- `id` is auto-generated based on type and existing count (e.g. `daily_003`)
+Required fields: `id`, `type`, `description`, `rewards`, `value`
+- `type` must be `"daily"` or `"weekly"`
 - `active` defaults to `true` if omitted
+
+### POST /players — request body
+
+```json
+{
+  "username": "player_name",
+  "email": "player@example.com"
+}
+```
+
+Any fields passed in the body are stored. `playerId` (UUID) and `createdAt` are auto-generated.
+
+### POST /players — response
+
+```json
+{
+  "playerId": "550e8400-e29b-41d4-a716-446655440000",
+  "username": "player_name",
+  "email": "player@example.com",
+  "createdAt": "2024-01-15T10:30:00.000Z"
+}
+```
+
+### GET /players/:id — response
+
+```json
+{
+  "playerId": "550e8400-e29b-41d4-a716-446655440000",
+  "username": "player_name",
+  "email": "player@example.com",
+  "createdAt": "2024-01-15T10:30:00.000Z",
+  "updatedAt": "2024-01-16T08:00:00.000Z"
+}
+```
+
+Returns `404` if the player does not exist.
+
+### PATCH /players/:id — request body
+
+```json
+{
+  "username": "new_name"
+}
+```
+
+Only the fields provided are updated. `updatedAt` is set automatically.
+
+### DELETE /players/:id — response
+
+```json
+{ "deleted": "550e8400-e29b-41d4-a716-446655440000" }
+```
 
 ---
 
@@ -116,14 +197,18 @@ npm run dev
 
 ```
 api/
-  index.js                ← Express app, mounts all routes
-  firebaseAdmin.js        ← Firebase Admin SDK init (singleton)
+  index.js                  ← Express app, mounts all routes
+  firebaseAdmin.js          ← Firebase Admin SDK init (singleton)
+  middleware/
+    auth.js                 ← API key guard (x-api-key header)
   routes/
-    missions.js           ← HTTP handlers for /missions
-    versionRoutes.js      ← HTTP handlers for /app-version
+    missions.js             ← HTTP handlers for /missions
+    players.js              ← HTTP handlers for /players
+    versionRoutes.js        ← HTTP handlers for /app-version
   services/
-    missionService.js     ← All Firestore logic for missions
-    versionService.js     ← All Firestore logic for app version
+    missionService.js       ← All Firestore logic for missions
+    playerService.js        ← All Firestore logic for players
+    versionService.js       ← All Firestore logic for app version
 ```
 
 Routes never query Firestore directly. Only the service files do. To swap the database later, change only those files.
@@ -140,12 +225,26 @@ Routes never query Firestore directly. Only the service files do. To swap the da
   "type": "daily",
   "description": "Win 3 matches in a row",
   "rewards": [{ "type": "coins", "amount": 500 }],
+  "value": 100,
   "active": true,
   "createdAt": "<Firestore timestamp>"
 }
 ```
 
 Reward types: `coins`, `voucher`, `merchandise`, `exclusive`
+
+### `players`
+
+```json
+{
+  "username": "player_name",
+  "email": "player@example.com",
+  "createdAt": "<Firestore timestamp>",
+  "updatedAt": "<Firestore timestamp>"
+}
+```
+
+Document ID is a UUID generated at creation time and returned as `playerId` in all responses.
 
 ### `appVersions/config`
 
