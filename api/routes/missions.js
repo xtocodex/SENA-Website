@@ -1,14 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const missionService = require('../services/missionService');
-
-function requireApiKey(req, res, next) {
-  const key = req.headers['x-api-key'];
-  if (!key || key !== process.env.API_KEY) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  next();
-}
+const { requireApiKey } = require('../middleware/auth');
 
 // GET /missions/daily
 router.get('/daily', async (req, res) => {
