@@ -1,6 +1,5 @@
 const { db } = require('../firebaseAdmin');
 const { FieldValue } = require('firebase-admin/firestore');
-const { v4: uuidv4 } = require('uuid');
 
 const COLLECTION = 'players';
 
@@ -11,10 +10,12 @@ function formatTimestamps(data) {
 }
 
 async function createPlayer(data) {
-  const playerId = uuidv4();
+  const { playerId, ...rest } = data;
   const docRef = db.collection(COLLECTION).doc(playerId);
-  await docRef.set({
-    ...data,
+  // create() refuses to overwrite an existing document — a duplicate
+  // playerId throws ALREADY_EXISTS (code 6) instead of clobbering data.
+  await docRef.create({
+    ...rest,
     createdAt: FieldValue.serverTimestamp(),
   });
   const snap = await docRef.get();
