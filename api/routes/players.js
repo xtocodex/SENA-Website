@@ -31,9 +31,19 @@ router.get('/:id', requireApiKey, async (req, res) => {
 // POST /players
 router.post('/', requireApiKey, async (req, res) => {
   try {
+    const { playerId } = req.body;
+    if (!playerId || typeof playerId !== 'string' || !playerId.trim()) {
+      return res.status(400).json({ error: 'playerId is required' });
+    }
+    if (playerId.includes('/') || playerId === '.' || playerId === '..' || /^__.*__$/.test(playerId)) {
+      return res.status(400).json({ error: 'playerId contains invalid characters' });
+    }
     const player = await playerService.createPlayer(req.body);
     res.status(201).json(player);
   } catch (err) {
+    if (err.code === 6 /* ALREADY_EXISTS */) {
+      return res.status(409).json({ error: 'A player with this playerId already exists' });
+    }
     console.error('POST /players error:', err);
     res.status(500).json({ error: 'Failed to create player' });
   }

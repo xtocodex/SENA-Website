@@ -143,18 +143,23 @@ Required fields: `id`, `type`, `description`, `rewards`, `value`
 
 ```json
 {
+  "playerId": "player_4471",
   "username": "player_name",
   "email": "player@example.com"
 }
 ```
 
-Any fields passed in the body are stored. `playerId` (UUID) and `createdAt` are auto-generated.
+`playerId` is **required** and is used as-is — the caller owns the id; the server never generates or overwrites it. Any other fields passed in the body are stored. `createdAt` is set automatically.
+
+- `playerId` must be a non-empty string, must not contain `/`, must not be `.` or `..`, and must not match `__*__`.
+- Returns `400` if `playerId` is missing or invalid.
+- Returns `409` if a player with that `playerId` already exists (the existing record is left untouched — it is never overwritten).
 
 ### POST /players — response
 
 ```json
 {
-  "playerId": "550e8400-e29b-41d4-a716-446655440000",
+  "playerId": "player_4471",
   "username": "player_name",
   "email": "player@example.com",
   "createdAt": "2024-01-15T10:30:00.000Z"
@@ -244,7 +249,7 @@ Reward types: `coins`, `voucher`, `merchandise`, `exclusive`
 }
 ```
 
-Document ID is a UUID generated at creation time and returned as `playerId` in all responses.
+Document ID is the caller-supplied `playerId`, provided in the `POST /players` body and returned as `playerId` in all responses.
 
 ### `appVersions/config`
 
