@@ -1,0 +1,54 @@
+rules_version = '2';
+
+// =============================================================================
+// SENA Firebase Storage Security Rules
+// =============================================================================
+// MODE: PERMISSIVE — same posture as firestore.rules.
+//   - BRAND users have Firebase Auth (Google sign-in) → uid-scoped writes
+//   - DEV users do NOT have Firebase Auth → must be allowed to delete
+//     storage objects from ManageBrands (server-side enforcement only)
+//
+// TODO (when DEV migrates to Firebase Auth):
+//   - Restrict ALL deletes to `request.auth.token.dev == true`
+//   - Restrict reads to owner OR dev
+//   - Remove the `|| true` clauses below
+// =============================================================================
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // ---- Brand registration sample uploads ----
+    // Path written by BrandRegister.jsx via uploadBrandSample().
+    // Only the owning brand (authenticated via Google) can write here.
+    match /brandRequests/{uid}/samples/{kind}/{fileName} {
+      allow read:   if true;                     // TODO: tighten to isOwner(uid) || isDev()
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid);
+      allow delete: if isOwner(uid) || true;     // TODO: tighten to isDev() once available
+    }
+
+    // ---- Brand dashboard media uploads (post-approval) ----
+    // Path written by uploadMedia.js. brandId in path == auth uid for new brands.
+    match /brandMedia/{uid}/{kind}/{fileName} {
+      allow read:   if true;                     // TODO: tighten to isOwner(uid) || isDev()
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid);
+      allow delete: if isOwner(uid) || true;     // TODO: tighten to isDev() once available (DEV deletes from ManageBrands)
+    }
+
+    // ---- Default deny ----
+    // Any path not matched above is blocked.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+  }
+}

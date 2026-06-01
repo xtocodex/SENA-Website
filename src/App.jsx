@@ -3,55 +3,48 @@ import { Toaster } from 'sonner';
 import { AuthProvider, SESSION_KEY } from '@/context/AuthContext';
 import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/LoginPage';
-import BrandDashboard from '@/pages/BrandDashboard';
+import BrandGate from '@/pages/BrandGate';
 import DevDashboard from '@/pages/DevDashboard';
 
-function ProtectedRoute({ role, children }) {
+function ProtectedDevRoute({ children }) {
   const sessionStr = localStorage.getItem(SESSION_KEY);
-  
+
   if (!sessionStr) {
     return <Navigate to="/" replace />;
   }
-  
+
   try {
     const session = JSON.parse(sessionStr);
-    if (session.role !== role) {
+    if (session.role !== 'dev') {
       return <Navigate to="/" replace />;
     }
   } catch {
     return <Navigate to="/" replace />;
   }
-  
+
   return children;
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Toaster richColors position="bottom-right" />
-      <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
+        <Toaster richColors position="bottom-right" />
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route 
-            path="/brand" 
+          <Route path="/brand" element={<BrandGate />} />
+          <Route
+            path="/dev"
             element={
-              <ProtectedRoute role="brand">
-                <BrandDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/dev" 
-            element={
-              <ProtectedRoute role="dev">
+              <ProtectedDevRoute>
                 <DevDashboard />
-              </ProtectedRoute>
-            } 
+              </ProtectedDevRoute>
+            }
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }

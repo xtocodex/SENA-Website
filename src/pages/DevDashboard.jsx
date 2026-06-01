@@ -3,18 +3,20 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Flex } from "@/components/ui/layout";
 import DevSidebar from "@/components/dev/DevSidebar";
 import DevTopBar from "@/components/dev/DevTopBar";
-import ManageBrands  from "@/components/dev/ManageBrands";
-import AdRequests   from "@/components/dev/AdRequests";
-import AdOperations from "@/components/dev/AdOperations";
-import Missions     from "@/components/dev/Missions";
-import AppVersion   from "@/components/dev/AppVersion";
+import ManageBrands   from "@/components/dev/ManageBrands";
+import BrandRequests  from "@/components/dev/BrandRequests";
+import AdRequests     from "@/components/dev/AdRequests";
+import AdOperations   from "@/components/dev/AdOperations";
+import Missions       from "@/components/dev/Missions";
+import AppVersion     from "@/components/dev/AppVersion";
 
 const CONTENT_MAP = {
-  'manage-brands':  () => <ManageBrands />,
-  'ad-requests':    () => <AdRequests />,
-  'ad-operations':  () => <AdOperations />,
-  'missions':       () => <Missions />,
-  'app-version':    () => <AppVersion />,
+  'manage-brands':   () => <ManageBrands />,
+  'brand-requests':  () => <BrandRequests />,
+  'ad-requests':     () => <AdRequests />,
+  'ad-operations':   () => <AdOperations />,
+  'missions':        () => <Missions />,
+  'app-version':     () => <AppVersion />,
 };
 
 export default function DevDashboard() {

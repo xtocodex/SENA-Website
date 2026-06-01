@@ -1,5 +1,6 @@
 import {
   Building2,
+  Inbox,
   ClipboardList,
   Clapperboard,
   Target,
@@ -11,10 +12,11 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Flex, Box } from "@/components/ui/layout";
 import { cn } from "@/lib/utils";
-import { logout } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 
 const NAV_ITEMS = [
   { id: 'manage-brands',  label: 'Manage Brands',  icon: Building2    },
+  { id: 'brand-requests', label: 'Brand Requests', icon: Inbox        },
   { id: 'ad-requests',    label: 'AD Requests',    icon: ClipboardList },
   { id: 'ad-operations',  label: 'AD Operations',  icon: Clapperboard  },
   { id: 'missions',       label: 'Missions',        icon: Target        },
@@ -22,6 +24,7 @@ const NAV_ITEMS = [
 ];
 
 export default function DevSidebar({ activeNav, onNavChange, sidebarOpen, onClose }) {
+  const { logout } = useAuth();
   const handleNav = (id) => {
     onNavChange(id);
     onClose?.();

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { LayoutGrid, List, Clock, XCircle, RadioTower, UserCircle } from 'lucide-react';
+import { LayoutGrid, List, Clock, XCircle, RadioTower, UserCircle, Ban } from 'lucide-react';
+import { toast } from 'sonner';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -23,9 +24,20 @@ import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Flex, Grid, Box } from "@/components/ui/layout";
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { PLACEMENT_LABELS, TYPE_LABELS, PROJECT_LABELS, today } from '@/lib/adConstants';
 
@@ -101,6 +113,7 @@ const MOCK_OPS = [
 // ─── status helpers (uses operational dates) ──────────────────
 
 function getOpStatus(item) {
+  if (item.status === 'suspended') return 'suspended';
   if (!item.opStartDate || !item.opEndDate) return 'upcoming';
   const start = new Date(item.opStartDate + 'T00:00:00');
   const end   = new Date(item.opEndDate   + 'T00:00:00');
@@ -128,6 +141,12 @@ const STATUS_META = {
     Icon:       XCircle,
     badgeClass: 'bg-muted text-muted-foreground border border-border',
     dotClass:   'bg-muted-foreground',
+  },
+  suspended: {
+    label:      'Suspended',
+    Icon:       Ban,
+    badgeClass: 'bg-destructive/10 text-destructive border border-destructive/20',
+    dotClass:   'bg-destructive',
   },
 };
 
@@ -163,11 +182,12 @@ function SkeletonGrid() {
 
 // ─── ops card ────────────────────────────────────────────────
 
-function OpsCard({ item, onExpand }) {
+function OpsCard({ item, onExpand, onSuspend }) {
   const [loaded,  setLoaded]  = useState(false);
   const [hovered, setHovered] = useState(false);
   const status  = getOpStatus(item);
   const isVideo = item.format === 'video';
+  const canSuspend = status === 'running';
 
   return (
     <Flex
@@ -255,6 +275,28 @@ function OpsCard({ item, onExpand }) {
             </span>
           </Flex>
         )}
+
+        {status === 'suspended' && item.suspendedBy && (
+          <Flex align="center" className="gap-1">
+            <Ban className="w-3 h-3 text-destructive shrink-0" aria-hidden="true" />
+            <span className="text-[9px] text-destructive truncate">
+              Suspended by {item.suspendedBy}
+            </span>
+          </Flex>
+        )}
+
+        {canSuspend && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full gap-1.5 mt-0.5 text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10"
+            onClick={(e) => { e.stopPropagation(); onSuspend(item); }}
+            aria-label={`Suspend ${item.fileName}`}
+          >
+            <Ban className="w-3.5 h-3.5" />
+            Suspend
+          </Button>
+        )}
       </Flex>
     </Flex>
   );
@@ -262,9 +304,10 @@ function OpsCard({ item, onExpand }) {
 
 // ─── ops table row ───────────────────────────────────────────
 
-function OpsTableRow({ item }) {
+function OpsTableRow({ item, onSuspend }) {
   const status  = getOpStatus(item);
   const isVideo = item.format === 'video';
+  const canSuspend = status === 'running';
 
   return (
     <TableRow>
@@ -310,8 +353,28 @@ function OpsTableRow({ item }) {
       <TableCell>
         <Flex align="center" className="gap-1.5">
           <UserCircle className="w-3.5 h-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
-          <span className="text-xs text-muted-foreground whitespace-nowrap">{item.runnedBy ?? '—'}</span>
+          <Flex direction="col">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">{item.runnedBy ?? '—'}</span>
+            {status === 'suspended' && item.suspendedBy && (
+              <span className="text-[10px] text-destructive whitespace-nowrap">Suspended by {item.suspendedBy}</span>
+            )}
+          </Flex>
         </Flex>
+      </TableCell>
+
+      <TableCell>
+        {canSuspend ? (
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 h-7 px-2 text-xs text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10"
+            onClick={() => onSuspend(item)}
+            aria-label={`Suspend ${item.fileName}`}
+          >
+            <Ban className="w-3 h-3" />
+            Suspend
+          </Button>
+        ) : <span className="text-xs text-muted-foreground">—</span>}
       </TableCell>
     </TableRow>
   );
@@ -321,9 +384,10 @@ function OpsTableRow({ item }) {
 
 function EmptyState({ tab }) {
   const messages = {
-    running:  'No ADs currently running.',
-    upcoming: 'No upcoming operations scheduled.',
-    expired:  'No expired operations found.',
+    running:   'No ADs currently running.',
+    upcoming:  'No upcoming operations scheduled.',
+    expired:   'No expired operations found.',
+    suspended: 'No suspended operations.',
   };
   return (
     <Flex direction="col" align="center" justify="center" className="py-24 gap-2">
@@ -335,6 +399,7 @@ function EmptyState({ tab }) {
 // ─── main component ───────────────────────────────────────────
 
 export default function AdOperations() {
+  const { session } = useAuth();
   const [allOps,   setAllOps]   = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [view,     setView]     = useState('grid');
@@ -343,6 +408,8 @@ export default function AdOperations() {
   const [typeFilter,      setTypeFilter]      = useState('all');
   const [projectFilter,   setProjectFilter]   = useState('all');
   const [lightboxItem,    setLightboxItem]    = useState(null);
+  const [suspendTarget,   setSuspendTarget]   = useState(null);
+  const [suspending,      setSuspending]      = useState(false);
 
   useEffect(() => {
     if (USE_MOCK) {
@@ -350,20 +417,40 @@ export default function AdOperations() {
       setLoading(false);
       return;
     }
-    (async () => {
-      setLoading(true);
-      try {
-        const snap = await getDocs(
-          query(collection(db, 'adOperations'), orderBy('runnedAt', 'desc'))
-        );
+    setLoading(true);
+    const q = query(collection(db, 'adOperations'), orderBy('runnedAt', 'desc'));
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
         setAllOps(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      } catch {
+        setLoading(false);
+      },
+      () => {
         setAllOps([]);
-      } finally {
         setLoading(false);
       }
-    })();
+    );
+    return () => unsub();
   }, []);
+
+  const handleSuspend = async () => {
+    if (!suspendTarget) return;
+    setSuspending(true);
+    try {
+      await updateDoc(doc(db, 'adOperations', suspendTarget.id), {
+        status:        'suspended',
+        suspendedBy:   session?.name  || session?.email || 'Unknown',
+        suspendedById: session?.id    || null,
+        suspendedAt:   serverTimestamp(),
+      });
+      toast.success(`"${suspendTarget.fileName}" suspended.`);
+      setSuspendTarget(null);
+    } catch (err) {
+      toast.error(`Suspend failed: ${err.message}`);
+    } finally {
+      setSuspending(false);
+    }
+  };
 
   // Derive brand list from loaded ops (no extra fetch needed)
   const brands = Array.from(
@@ -380,9 +467,10 @@ export default function AdOperations() {
   });
 
   const byStatus = {
-    running:  filtered.filter(i => getOpStatus(i) === 'running'),
-    upcoming: filtered.filter(i => getOpStatus(i) === 'upcoming'),
-    expired:  filtered.filter(i => getOpStatus(i) === 'expired'),
+    running:   filtered.filter(i => getOpStatus(i) === 'running'),
+    upcoming:  filtered.filter(i => getOpStatus(i) === 'upcoming'),
+    expired:   filtered.filter(i => getOpStatus(i) === 'expired'),
+    suspended: filtered.filter(i => getOpStatus(i) === 'suspended'),
   };
 
   // ── content renderers ──
@@ -392,7 +480,7 @@ export default function AdOperations() {
     return (
       <Grid gap={3} className="w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
         {items.map(item => (
-          <OpsCard key={item.id} item={item} onExpand={setLightboxItem} />
+          <OpsCard key={item.id} item={item} onExpand={setLightboxItem} onSuspend={setSuspendTarget} />
         ))}
       </Grid>
     );
@@ -416,11 +504,12 @@ export default function AdOperations() {
               <TableHead>End</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Scheduled By</TableHead>
+              <TableHead className="w-24">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {items.map(item => (
-              <OpsTableRow key={item.id} item={item} />
+              <OpsTableRow key={item.id} item={item} onSuspend={setSuspendTarget} />
             ))}
           </TableBody>
         </Table>
@@ -543,6 +632,16 @@ export default function AdOperations() {
               </Badge>
             )}
           </TabsTrigger>
+
+          <TabsTrigger value="suspended" className="gap-2">
+            <Ban className="w-3 h-3" aria-hidden="true" />
+            Suspended
+            {!loading && (
+              <Badge variant="secondary" className="ml-1 text-[9px] px-1.5 py-0 h-4">
+                {byStatus.suspended.length}
+              </Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="running">
@@ -553,6 +652,9 @@ export default function AdOperations() {
         </TabsContent>
         <TabsContent value="expired">
           {renderContent(byStatus.expired, 'expired')}
+        </TabsContent>
+        <TabsContent value="suspended">
+          {renderContent(byStatus.suspended, 'suspended')}
         </TabsContent>
       </Tabs>
 
@@ -599,10 +701,42 @@ export default function AdOperations() {
                   )}
                 </Flex>
               </Flex>
+
+              {getOpStatus(lightboxItem) === 'suspended' && lightboxItem.suspendedBy && (
+                <Flex align="center" className="gap-1.5 px-2 pb-1">
+                  <Ban className="w-3.5 h-3.5 text-destructive" aria-hidden="true" />
+                  <span className="text-xs text-destructive">
+                    Suspended by {lightboxItem.suspendedBy}
+                    {lightboxItem.suspendedAt?.toDate ? ` · ${lightboxItem.suspendedAt.toDate().toLocaleString()}` : ''}
+                  </span>
+                </Flex>
+              )}
             </Flex>
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!suspendTarget} onOpenChange={(o) => { if (!o) setSuspendTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Suspend this ad?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{suspendTarget?.fileName}</strong> will be removed from the Active list immediately.
+              The record is kept for audit but cannot be reactivated.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={suspending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleSuspend(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={suspending}
+            >
+              {suspending ? 'Suspending…' : 'Suspend'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </Flex>
   );

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { ArrowRight, ArrowLeft, User, Code, AlertCircle, Gamepad2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { signInWithPopup } from 'firebase/auth';
+import { db, auth, googleProvider } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [brandSigningIn, setBrandSigningIn] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -33,7 +35,22 @@ export default function LoginPage() {
     setPassword('');
   };
 
-  const handleSubmit = async (e) => {
+  const handleBrandGoogleSignIn = async () => {
+    setBrandSigningIn(true);
+    setError(null);
+    try {
+      await signInWithPopup(auth, googleProvider);
+      navigate('/brand');
+    } catch (err) {
+      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        setError(err.message || 'Google sign-in failed. Please try again.');
+      }
+    } finally {
+      setBrandSigningIn(false);
+    }
+  };
+
+  const handleDevSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Please fill out all fields.');
@@ -44,9 +61,8 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const collectionName = role === 'dev' ? 'devs' : 'brands';
       const q = query(
-        collection(db, collectionName),
+        collection(db, 'devs'),
         where('email', '==', email),
         where('password', '==', password)
       );
@@ -62,17 +78,15 @@ export default function LoginPage() {
       const userData = snapshot.docs[0].data();
       const sessionData = {
         id: snapshot.docs[0].id,
-        role: role,
+        role: 'dev',
         email: userData.email,
-        brandName: userData.brandName || '',
-        name: userData.name || userData.brandName || userData.email || '',
+        brandName: '',
+        name: userData.name || userData.email || '',
       };
 
       login(sessionData);
-
-      if (role === 'brand') navigate('/brand');
-      else if (role === 'dev') navigate('/dev');
-    } catch (err) {
+      navigate('/dev');
+    } catch {
       setError('Invalid email or password');
     } finally {
       setLoading(false);
@@ -86,7 +100,6 @@ export default function LoginPage() {
       justify="center"
       className="min-h-screen px-4 py-12 relative"
     >
-      {/* Back to home */}
       <Box className="absolute top-5 left-5">
         <Button
           variant="ghost"
@@ -101,7 +114,6 @@ export default function LoginPage() {
 
       <Container maxWidth="sm">
 
-        {/* Logo / Wordmark */}
         <Flex direction="col" align="center" className="mb-8 gap-3">
           <Flex
             align="center"
@@ -120,7 +132,6 @@ export default function LoginPage() {
           </Flex>
         </Flex>
 
-        {/* Main Card */}
         <Card>
           <CardHeader>
             <CardDescription className="text-center text-xs uppercase tracking-widest">
@@ -129,7 +140,6 @@ export default function LoginPage() {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {/* Role Selector */}
             <Grid cols={2} gap={3}>
               <Button
                 size="tile"
@@ -149,48 +159,73 @@ export default function LoginPage() {
               </Button>
             </Grid>
 
-            {/* Animated Form Reveal */}
             <Grid state={role ? 'visible' : 'hidden'}>
               <Box className="overflow-hidden">
                 <Flex direction="col" className="gap-4 pt-1">
                   <Separator />
-                  <form onSubmit={handleSubmit} className="space-y-5">
-                    <Box className="space-y-2">
-                      <Label htmlFor="email">Email address</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        autoComplete="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@company.com"
-                      />
-                    </Box>
 
-                    <Box className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        autoComplete="current-password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                      />
-                    </Box>
+                  {role === 'brand' && (
+                    <Flex direction="col" className="gap-3">
+                      <CardDescription className="text-xs text-center">
+                        Brands sign in with Google. If you're new, you'll be guided through registration.
+                      </CardDescription>
+                      <Button
+                        size="lg"
+                        className="w-full gap-2"
+                        onClick={handleBrandGoogleSignIn}
+                        disabled={brandSigningIn}
+                      >
+                        {brandSigningIn ? 'Opening Google…' : 'Continue with Google'}
+                        {!brandSigningIn && <ArrowRight className="w-4 h-4" />}
+                      </Button>
+                      {error && (
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                      )}
+                    </Flex>
+                  )}
 
-                    <Button type="submit" size="lg" className="w-full" disabled={loading}>
-                      {loading ? 'Signing in...' : `Sign in as ${role === 'brand' ? 'Brand' : role === 'dev' ? 'Dev' : '…'}`}
-                      {!loading && <ArrowRight />}
-                    </Button>
+                  {role === 'dev' && (
+                    <form onSubmit={handleDevSubmit} className="space-y-5">
+                      <Box className="space-y-2">
+                        <Label htmlFor="email">Email address</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          autoComplete="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="you@company.com"
+                        />
+                      </Box>
 
-                    {error && (
-                      <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>{error}</AlertDescription>
-                      </Alert>
-                    )}
-                  </form>
+                      <Box className="space-y-2">
+                        <Label htmlFor="password">Password</Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          autoComplete="current-password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="••••••••"
+                        />
+                      </Box>
+
+                      <Button type="submit" size="lg" className="w-full" disabled={loading}>
+                        {loading ? 'Signing in...' : 'Sign in as Dev'}
+                        {!loading && <ArrowRight />}
+                      </Button>
+
+                      {error && (
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                      )}
+                    </form>
+                  )}
                 </Flex>
               </Box>
             </Grid>

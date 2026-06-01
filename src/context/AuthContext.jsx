@@ -1,4 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 const AuthContext = createContext(null);
 
@@ -6,6 +9,7 @@ export const SESSION_KEY = 'sena_session';
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const stored = localStorage.getItem(SESSION_KEY);
@@ -30,8 +34,15 @@ export function AuthProvider({ children }) {
     setSession(sessionData);
   };
 
+  const logout = () => {
+    navigate('/', { replace: true });
+    localStorage.removeItem(SESSION_KEY);
+    setSession(null);
+    if (auth.currentUser) signOut(auth).catch(() => {});
+  };
+
   return (
-    <AuthContext.Provider value={{ session, login }}>
+    <AuthContext.Provider value={{ session, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -43,9 +54,4 @@ export function useAuth() {
     throw new Error('useAuth must be used within AuthProvider');
   }
   return context;
-}
-
-export function logout() {
-  localStorage.removeItem(SESSION_KEY);
-  window.location.href = '/';
 }

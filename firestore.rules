@@ -1,0 +1,84 @@
+rules_version = '2';
+
+// =============================================================================
+// SENA Firestore Security Rules
+// =============================================================================
+// MODE: PERMISSIVE — intended for the current model where:
+//   - BRAND users authenticate via Firebase Auth (Google sign-in)
+//   - DEV users authenticate via custom Firestore lookup (NO Firebase Auth)
+//
+// Because DEV has no Firebase Auth identity, server-side rules cannot
+// distinguish a DEV from anonymous traffic. Until DEV is migrated to
+// Firebase Auth (and tagged with a `dev` custom claim), the strictly safe
+// rules below are intentionally loose on DEV-owned collections.
+//
+// TODO (when DEV migrates to Firebase Auth):
+//   - Add a `request.auth.token.dev == true` check to every DEV-write path
+//   - Lock down `brands` and `adOperations` writes to DEV only
+//   - Lock down `brand_requests` reads of OTHER users' docs to DEV only
+//   - Remove the open clauses below
+// =============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- Helpers ----
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // ---- brand_requests ----
+    // A signed-in brand can create + read + update their own request.
+    // TODO: restrict cross-doc reads to DEV once DEV uses Firebase Auth.
+    match /brand_requests/{uid} {
+      allow create: if isOwner(uid);
+      allow read:   if true;                       // TODO: tighten to isOwner(uid) || isDev()
+      allow update: if isOwner(uid) || true;       // TODO: tighten to isDev() for status/feedback fields
+      allow delete: if true;                       // TODO: tighten to isDev()
+    }
+
+    // ---- brands (approved) ----
+    // Brand can read their own doc; DEV creates/updates/deletes.
+    match /brands/{uid} {
+      allow read:   if true;                       // TODO: tighten to isOwner(uid) || isDev()
+      allow write:  if true;                       // TODO: tighten to isDev()
+    }
+
+    // ---- brandMedia (per-brand subcollections) ----
+    // Brand owns their media; DEV reads.
+    match /brandMedia/{uid}/{sub}/{docId} {
+      allow read:   if true;                       // TODO: tighten to isOwner(uid) || isDev()
+      allow write:  if isOwner(uid) || true;       // TODO: tighten to isOwner(uid) only, OR isDev() for runStatus updates
+    }
+
+    // ---- adOperations ----
+    // DEV-only collection. Tracks runs + suspensions.
+    match /adOperations/{docId} {
+      allow read:  if true;                        // TODO: tighten to isDev() || brand can read own
+      allow write: if true;                        // TODO: tighten to isDev()
+    }
+
+    // ---- devs ----
+    // Plaintext credential collection; only DEV server tooling should write.
+    match /devs/{devId} {
+      allow read:  if true;                        // TODO: read-restrict; consider moving to Firebase Auth
+      allow write: if false;                       // never write from client
+    }
+
+    // ---- missions / appVersions / demoRequests (existing, unchanged) ----
+    match /missions/{docId}        { allow read: if true; allow write: if true; }   // TODO: tighten
+    match /appVersions/{docId}     { allow read: if true; allow write: if true; }   // TODO: tighten
+    match /demoRequests/{docId}    { allow create: if true; allow read, update, delete: if false; }
+
+    // ---- players ----
+    // Written exclusively by the Express API (firebase-admin SDK bypasses
+    // these rules). Web client must never touch this collection.
+    match /players/{playerId} {
+      allow read, write: if false;
+    }
+
+  }
+}

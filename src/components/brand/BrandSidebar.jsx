@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Flex, Box } from "@/components/ui/layout";
 import { cn } from "@/lib/utils";
-import { logout } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 
 const NAV_ITEMS = [
   { id: 'upload-images', label: 'Upload Images', icon: ImageUp },
@@ -20,6 +20,7 @@ const NAV_ITEMS = [
 ];
 
 export default function BrandSidebar({ activeNav, onNavChange, sidebarOpen, onClose }) {
+  const { logout } = useAuth();
   const handleNav = (id) => {
     onNavChange(id);
     onClose?.();
