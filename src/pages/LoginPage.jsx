@@ -25,6 +25,7 @@ export default function LoginPage() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [brandSigningIn, setBrandSigningIn] = useState(false);
+  const [userSigningIn, setUserSigningIn] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -47,6 +48,21 @@ export default function LoginPage() {
       }
     } finally {
       setBrandSigningIn(false);
+    }
+  };
+
+  const handleUserGoogleSignIn = async () => {
+    setUserSigningIn(true);
+    setError(null);
+    try {
+      await signInWithPopup(auth, googleProvider);
+      navigate('/user');
+    } catch (err) {
+      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        setError(err.message || 'Google sign-in failed. Please try again.');
+      }
+    } finally {
+      setUserSigningIn(false);
     }
   };
 
@@ -140,14 +156,22 @@ export default function LoginPage() {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            <Grid cols={2} gap={3}>
+            <Grid cols={3} gap={3}>
+              <Button
+                size="tile"
+                variant={role === 'user' ? 'outline-active' : 'outline'}
+                onClick={() => handleRoleSelect('user')}
+              >
+                <Gamepad2 />
+                <span>Player</span>
+              </Button>
               <Button
                 size="tile"
                 variant={role === 'brand' ? 'outline-active' : 'outline'}
                 onClick={() => handleRoleSelect('brand')}
               >
                 <User />
-                <span>Brand Login</span>
+                <span>Brand</span>
               </Button>
               <Button
                 size="tile"
@@ -155,7 +179,7 @@ export default function LoginPage() {
                 onClick={() => handleRoleSelect('dev')}
               >
                 <Code />
-                <span>Dev Login</span>
+                <span>Dev</span>
               </Button>
             </Grid>
 
@@ -163,6 +187,29 @@ export default function LoginPage() {
               <Box className="overflow-hidden">
                 <Flex direction="col" className="gap-4 pt-1">
                   <Separator />
+
+                  {role === 'user' && (
+                    <Flex direction="col" className="gap-3">
+                      <CardDescription className="text-xs text-center">
+                        Players sign in with Google to view their game rewards and redeem coupons.
+                      </CardDescription>
+                      <Button
+                        size="lg"
+                        className="w-full gap-2"
+                        onClick={handleUserGoogleSignIn}
+                        disabled={userSigningIn}
+                      >
+                        {userSigningIn ? 'Opening Google…' : 'Continue with Google'}
+                        {!userSigningIn && <ArrowRight className="w-4 h-4" />}
+                      </Button>
+                      {error && (
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                      )}
+                    </Flex>
+                  )}
 
                   {role === 'brand' && (
                     <Flex direction="col" className="gap-3">

@@ -1,12 +1,7 @@
 import {
-  Building2,
-  Inbox,
-  ClipboardList,
-  Clapperboard,
-  Target,
-  Smartphone,
+  LayoutDashboard,
+  Gift,
   Ticket,
-  Users,
   LogOut,
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -17,17 +12,12 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 
 const NAV_ITEMS = [
-  { id: 'manage-brands',  label: 'Manage Brands',  icon: Building2    },
-  { id: 'brand-requests', label: 'Brand Requests', icon: Inbox        },
-  { id: 'ad-requests',    label: 'AD Requests',    icon: ClipboardList },
-  { id: 'ad-operations',  label: 'AD Operations',  icon: Clapperboard  },
-  { id: 'missions',       label: 'Missions',        icon: Target        },
-  { id: 'app-version',    label: 'App Version',     icon: Smartphone   },
-  { id: 'coupon-management', label: 'Coupon Management', icon: Ticket   },
-  { id: 'players',        label: 'Players',         icon: Users         },
+  { id: 'overview',    label: 'Overview',    icon: LayoutDashboard },
+  { id: 'rewards',     label: 'Rewards',     icon: Gift },
+  { id: 'my-requests', label: 'My Requests', icon: Ticket },
 ];
 
-export default function DevSidebar({ activeNav, onNavChange, sidebarOpen, onClose }) {
+export default function UserSidebar({ activeNav, onNavChange, sidebarOpen, onClose }) {
   const { logout } = useAuth();
   const handleNav = (id) => {
     onNavChange(id);
@@ -47,7 +37,7 @@ export default function DevSidebar({ activeNav, onNavChange, sidebarOpen, onClos
         <Flex direction="col" className="gap-1 px-3">
           <Box className="px-2 mb-2">
             <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">
-              Admin
+              Player
             </span>
           </Box>
           {NAV_ITEMS.map(({ id, label, icon: Icon }) => (

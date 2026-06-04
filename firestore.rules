@@ -68,6 +68,32 @@ service cloud.firestore {
       allow write: if false;                       // never write from client
     }
 
+    // ---- users (players) ----
+    // Player signs in with Google; doc created + read by the owner.
+    // DEV edits coins/stats from the dashboard (no Firebase Auth → update stays open).
+    match /users/{uid} {
+      allow read:   if true;                       // TODO: tighten to isOwner(uid) || isDev()
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) || true;       // TODO: tighten to isDev() for coins/stats fields
+      allow delete: if true;                       // TODO: tighten to isDev()
+    }
+
+    // ---- reward_brands (DEV-curated coupon catalog) ----
+    // Players read; DEV writes.
+    match /reward_brands/{docId} {
+      allow read:  if true;                        // TODO: tighten to isSignedIn()
+      allow write: if true;                        // TODO: tighten to isDev()
+    }
+
+    // ---- coupon_requests (player redemptions, processed by DEV) ----
+    // A signed-in player creates their own request; DEV reads all + updates status.
+    match /coupon_requests/{docId} {
+      allow read:   if true;                       // TODO: tighten to isOwner(resource.data.userId) || isDev()
+      allow create: if isSignedIn();
+      allow update: if true;                       // TODO: tighten to isDev()
+      allow delete: if true;                       // TODO: tighten to isDev()
+    }
+
     // ---- missions / appVersions / demoRequests (existing, unchanged) ----
     match /missions/{docId}        { allow read: if true; allow write: if true; }   // TODO: tighten
     match /appVersions/{docId}     { allow read: if true; allow write: if true; }   // TODO: tighten

@@ -6,8 +6,8 @@ import {
   Gamepad2, Building2, Zap, Trophy, Users,
   Star, DollarSign, Rocket, Menu, X, ArrowRight,
   ChevronRight, ChevronDown, ChevronUp, Play,
-  Code, Globe, Shield, Gift, BarChart3,
-  CheckCircle, Package, Layers, Send,
+  Globe, Shield, Gift, BarChart3,
+  CheckCircle, Package, Send,
 } from 'lucide-react';
 
 /* ─── Design Tokens ──────────────────────────────────────── */
@@ -201,30 +201,6 @@ const GAURAVGO_DIFF = [
   { Icon: Building2,  title: 'Brand Partnerships',  desc: 'We connect studios with 100+ brands eager to reach India\'s growing gaming audience through meaningful integrations.' },
 ];
 
-const INTEGRATION = [
-  {
-    Icon: Code,
-    title: 'Easy SDK Integration',
-    badge: 'DEVELOPER READY',
-    desc: 'Drop our lightweight SDK into your game in under an hour. Full documentation, sample projects, and dedicated developer support included.',
-    points: ['Under 1 hour setup', 'Full API documentation', 'Sample projects included'],
-  },
-  {
-    Icon: Zap,
-    title: 'Zero Friction Setup',
-    badge: 'PLUG & PLAY',
-    desc: 'No backend changes required. SENA handles all the coin logic, reward fulfilment, and brand dashboards so you can focus on building great games.',
-    points: ['No backend changes', 'Managed coin ledger', 'Automated reward fulfilment'],
-  },
-  {
-    Icon: Layers,
-    title: 'Works Across Platforms',
-    badge: 'CROSS-PLATFORM',
-    desc: 'Unity, Unreal, React Native, or native Android/iOS — our SDK is platform-agnostic and integrates seamlessly with your existing tech stack.',
-    points: ['Unity & Unreal plugins', 'React Native support', 'Native Android & iOS'],
-  },
-];
-
 const WHY_CHOOSE = [
   { Icon: Gamepad2,   title: "Odisha's First",    desc: "Pioneering the gaming industry in Odisha and setting benchmarks for the entire region." },
   { Icon: DollarSign, title: 'Zero Cost Play',    desc: 'Players earn real rewards without spending a single rupee — ethical monetisation at its core.' },
@@ -236,57 +212,45 @@ const WHY_CHOOSE = [
 
 const TESTIMONIALS = [
   {
-    quote: "Integrating SENA into our casual game was the best decision we made. Our Day-30 retention jumped by 40% and players love earning real rewards. The SDK was live in under a day.",
+    quote: "SENA has been a fantastic addition to our gaming experience. The platform is engaging, easy to use, and has been well received by our community. We're excited to see how it continues to grow.",
     name: 'Arjun Mehta',
-    role: 'Studio Lead at PixelForge Games',
+    role: 'Studio Lead',
     initial: 'A',
   },
   {
-    quote: "As a brand, SENA gave us access to an incredibly engaged gaming audience in India. Our coupon redemption rate was 3x higher than our standard digital campaigns. Truly impressive reach.",
+    quote: "Working with SENA has been a great experience. The platform offers a unique way to connect with a highly engaged audience, and the overall experience has exceeded our expectations.",
     name: 'Priya Sharma',
-    role: 'Marketing Head at UrbanCart India',
+    role: 'Marketing Professional',
     initial: 'P',
   },
   {
-    quote: "GauravGo Games understood our needs as an indie studio perfectly. Zero pay-to-win is not just a tagline — their whole platform is built around it. Our community trusts us more now.",
+    quote: "What stands out about SENA is its player-first approach. The team is passionate, responsive, and focused on creating a fair and enjoyable environment for everyone involved.",
     name: 'Rohan Das',
-    role: 'Founder at NeonByte Studios',
+    role: 'Founder & Gaming Enthusiast',
     initial: 'R',
   },
 ];
 
 const FAQS = [
   {
-    q: 'What is SENA Mayaverse?',
-    a: 'SENA Mayaverse is GauravGo Games\'s flagship gamified platform where players earn real SENA Coins by playing games, completing quests, and engaging with challenges — all at absolutely zero cost. It\'s where gaming meets real-world rewards.',
+    q: 'What is SENA: Mayaverse?',
+    a: 'SENA: Mayaverse is our metaverse-based battle royale and story-driven action game. It brings together battle royale gameplay, virtual exploration, social interaction, and a gamified economy inside a living virtual world inspired by real-life locations.',
   },
   {
-    q: 'How do SENA Coins work?',
-    a: 'SENA Coins are earned through in-game actions: winning matches, completing daily missions, achieving milestones, and participating in brand challenges. Coins accumulate in your wallet and can be redeemed for real rewards from our brand partners including vouchers, merchandise, and exclusive offers.',
+    q: 'Who developed SENA?',
+    a: 'SENA is developed by GauravGo Games, an Odisha-based game studio founded by Dipesh Gaurav. We focus on creating Indian-made games, simulations, AR/VR experiences, and gamification platforms.',
   },
   {
-    q: 'How does brand integration work?',
-    a: 'Brands partner with SENA to fund reward pools in exchange for exposure to our engaged gaming audience. Brands can run sponsored challenges, offer branded rewards, and reach players through contextual in-game placements — all without disrupting gameplay.',
+    q: 'What does SENA stand for?',
+    a: 'The original SENA title stood for "Strike & Encounter For Nation By Abhinandan". Our storyline was inspired by the Indian Air Force\'s Balakot airstrike operations and the story of Wing Commander Abhinandan Varthaman.',
   },
   {
-    q: 'How do I integrate the SENA SDK into my game?',
-    a: 'Integration takes under an hour for most studios. You download our SDK, add your API credentials, and call our events API when players complete actions. We handle all coin logic, wallet management, and reward fulfilment. Full documentation and sample projects are available in our developer portal.',
+    q: 'What makes SENA different from PUBG or Free Fire?',
+    a: 'We built SENA to go beyond traditional battle royale gameplay. It blends Indian-themed environments and stories, metaverse features, social interaction, brand engagement, and play-to-earn reward mechanisms — an Indian alternative that combines gaming, earning, and virtual experiences.',
   },
   {
-    q: 'What is the pricing model for studios?',
-    a: 'SENA is free for studios to integrate. We operate on a revenue-share model where studios earn a percentage of every brand deal that flows through their games. There are no upfront fees, no monthly subscriptions, and no hidden charges.',
-  },
-  {
-    q: 'Which platforms does SENA support?',
-    a: 'SENA currently supports Android, iOS, web (React/HTML5), Unity, and Unreal Engine. We also offer a React Native SDK for cross-platform mobile games. Additional platform support is on our roadmap — reach out to discuss your stack.',
-  },
-  {
-    q: 'How is player data handled?',
-    a: 'We take data privacy seriously. All player data is processed in compliance with India\'s Digital Personal Data Protection Act (DPDPA). We never sell player data to third parties. Brand analytics are always aggregated and anonymised. Players can request data deletion at any time.',
-  },
-  {
-    q: 'How do I get started?',
-    a: 'Click "Book a Demo" to schedule a 30-minute call with our partnerships team. We\'ll walk you through the platform, discuss your game\'s integration, and set up your developer account. Most studios are live within a week of their first call.',
+    q: 'Can players earn rewards in SENA?',
+    a: 'Yes. We designed SENA: Mayaverse as a platform where players can take part in activities, challenges, and brand-sponsored experiences to earn rewards — with no upfront investment required. It\'s a key feature of the Mayaverse ecosystem.',
   },
 ];
 
@@ -771,60 +735,6 @@ function GauravGoDifference() {
               <div>
                 <h3 className="text-lg font-black text-white mb-2">{title}</h3>
                 <p className="text-sm leading-relaxed" style={{ color: C.muted }}>{desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── Integration Details ────────────────────────────────── */
-function IntegrationDetails() {
-  return (
-    <section className="py-24 px-6" style={{ background: C.bgAlt }}>
-      <div className="max-w-6xl mx-auto">
-        <SectionHeading pill="For Developers">
-          Built for{' '}
-          <span style={{ color: C.gold }}>Developers</span>
-        </SectionHeading>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {INTEGRATION.map(({ Icon, title, badge, desc, points }, i) => (
-            <div
-              key={i}
-              className="feature-card rounded-2xl p-8 flex flex-col gap-5 cursor-default"
-              style={{
-                background: C.card,
-                border: `1px solid rgba(255,215,0,.14)`,
-              }}
-            >
-              <div className="flex items-center gap-4">
-                <div
-                  className="flex items-center justify-center rounded-xl flex-shrink-0"
-                  style={{ width: 52, height: 52, background: 'rgba(255,215,0,.10)', color: C.gold }}
-                >
-                  <Icon size={24} strokeWidth={1.8} />
-                </div>
-                <span
-                  className="text-xs font-black px-2.5 py-1 rounded-full tracking-wider uppercase"
-                  style={{ background: 'rgba(255,215,0,.10)', color: C.gold, border: '1px solid rgba(255,215,0,.28)' }}
-                >
-                  {badge}
-                </span>
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-white mb-2">{title}</h3>
-                <p className="text-sm leading-relaxed mb-4" style={{ color: C.muted }}>{desc}</p>
-                <ul className="flex flex-col gap-2">
-                  {points.map((pt, j) => (
-                    <li key={j} className="flex items-center gap-2 text-sm" style={{ color: C.muted }}>
-                      <CheckCircle size={14} color={C.gold} strokeWidth={2.5} />
-                      {pt}
-                    </li>
-                  ))}
-                </ul>
               </div>
             </div>
           ))}
@@ -1600,7 +1510,6 @@ export default function LandingPage() {
       <IndustryInsight />
       <HowItWorks />
       <GauravGoDifference />
-      <IntegrationDetails />
       <WhyChooseUs />
       <Testimonials />
       <BrandPartners />

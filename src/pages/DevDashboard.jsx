@@ -9,6 +9,8 @@ import AdRequests     from "@/components/dev/AdRequests";
 import AdOperations   from "@/components/dev/AdOperations";
 import Missions       from "@/components/dev/Missions";
 import AppVersion     from "@/components/dev/AppVersion";
+import CouponManagement from "@/components/dev/CouponManagement";
+import Players        from "@/components/dev/Players";
 
 const CONTENT_MAP = {
   'manage-brands':   () => <ManageBrands />,
@@ -17,6 +19,8 @@ const CONTENT_MAP = {
   'ad-operations':   () => <AdOperations />,
   'missions':        () => <Missions />,
   'app-version':     () => <AppVersion />,
+  'coupon-management': () => <CouponManagement />,
+  'players':         () => <Players />,
 };
 
 export default function DevDashboard() {

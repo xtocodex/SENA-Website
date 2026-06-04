@@ -4,6 +4,7 @@ import { AuthProvider, SESSION_KEY } from '@/context/AuthContext';
 import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/LoginPage';
 import BrandGate from '@/pages/BrandGate';
+import UserGate from '@/pages/UserGate';
 import DevDashboard from '@/pages/DevDashboard';
 
 function ProtectedDevRoute({ children }) {
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/brand" element={<BrandGate />} />
+          <Route path="/user" element={<UserGate />} />
           <Route
             path="/dev"
             element={
