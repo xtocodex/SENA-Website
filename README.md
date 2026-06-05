@@ -7,18 +7,18 @@
 ## Table of Contents
 
 - [Overview](#overview)
+- [Related Repositories](#related-repositories)
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Frontend Setup](#frontend-setup)
-  - [API Server Setup](#api-server-setup)
 - [Project Structure](#project-structure)
 - [Architecture](#architecture)
   - [Authentication](#authentication)
   - [Routing](#routing)
   - [Ad Workflow](#ad-workflow)
   - [Firestore Data Model](#firestore-data-model)
-- [API Reference](#api-reference)
+- [Game API](#game-api)
 - [Environment Variables](#environment-variables)
 - [Docker](#docker)
 - [Conventions](#conventions)
@@ -35,7 +35,18 @@ SENA is a role-based SPA with two user types:
 | **Brand** | Upload ad media (images/videos), configure campaign metadata (dates, placements, type, project) |
 | **Dev / Admin** | Review ad requests, schedule ad runs, manage missions, update app versions, manage brand accounts |
 
-The frontend is a React + Vite SPA connected to Firebase Firestore and Storage. A separate Express API server handles game client integration via Firebase Admin SDK.
+The frontend is a React + Vite SPA connected to Firebase Firestore and Storage. The game-client API (missions, players, app version) lives in its **own repository** and deploys independently to Cloud Run — see [Related Repositories](#related-repositories).
+
+---
+
+## Related Repositories
+
+| Repo | Purpose | Deploys to |
+|---|---|---|
+| **this repo** (`SENA-Website`) | React + Vite web app (brand + dev dashboards) | Cloud Run / Netlify |
+| [`xtocodex/sena-missions-api`](https://github.com/xtocodex/sena-missions-api) | Express + Firebase Admin API for the game client (missions, players, app version) | Cloud Run `sena-missions-api` (us-central1) — auto-deploys on push to `main` |
+
+The two are linked only over **HTTP** (the website calls the API's Cloud Run URL) and by sharing the **same Firebase/Firestore project** (`crucial-summer-456605-p8`). They have no shared code. See [Game API](#game-api).
 
 ---
 
@@ -50,8 +61,6 @@ The frontend is a React + Vite SPA connected to Firebase Firestore and Storage. 
 | UI Components | shadcn/ui | CLI-managed |
 | Icons | Lucide React | 1.14.0 |
 | Firebase (client) | firebase | 12.12.1 |
-| Firebase (server) | firebase-admin | 12.0.0 |
-| API Server | Express | 4.18.2 |
 | Utilities | CVA + clsx + tailwind-merge | — |
 | Language | JavaScript (JSX) — no TypeScript | — |
 
@@ -63,7 +72,6 @@ The frontend is a React + Vite SPA connected to Firebase Firestore and Storage. 
 
 - Node.js 20+
 - A Firebase project with Firestore and Storage enabled
-- Firebase service account credentials (for the API server)
 
 ### Frontend Setup
 
@@ -75,64 +83,47 @@ npm run preview    # Preview production build locally
 npm run lint       # ESLint
 ```
 
-### API Server Setup
-
-```bash
-cd api
-npm install
-cp .env.example .env   # Fill in Firebase service account credentials
-npm run dev            # Development with nodemon (hot reload)
-npm start              # Production
-```
-
 ---
 
 ## Project Structure
 
 ```
 .
-├── src/
-│   ├── App.jsx                      # Router + AuthProvider + ProtectedRoute
-│   ├── main.jsx                     # React entry point
-│   ├── index.css                    # Tailwind directives + CSS custom properties
-│   ├── lib/
-│   │   ├── firebase.js              # Firestore + Storage client init
-│   │   ├── uploadMedia.js           # Firebase Storage upload helpers
-│   │   ├── adConstants.js           # Shared: PLACEMENT_LABELS, TYPE_LABELS, PROJECT_LABELS
-│   │   └── utils.js                 # cn() helper (clsx + tailwind-merge)
-│   ├── context/
-│   │   └── AuthContext.jsx          # Session context + login/logout
-│   ├── pages/
-│   │   ├── LandingPage.jsx
-│   │   ├── LoginPage.jsx
-│   │   ├── BrandDashboard.jsx
-│   │   └── DevDashboard.jsx
-│   └── components/
-│       ├── ui/                      # shadcn/ui primitives (CLI-managed)
-│       ├── brand/                   # Brand dashboard feature components
-│       │   ├── BrandSidebar.jsx
-│       │   ├── BrandTopBar.jsx
-│       │   ├── UploadZone.jsx       # Firebase Storage upload (images + videos)
-│       │   └── MediaGallery.jsx
-│       └── dev/                     # Dev dashboard feature components
-│           ├── DevSidebar.jsx
-│           ├── DevTopBar.jsx
-│           ├── ManageBrands.jsx
-│           ├── AdRequests.jsx
-│           ├── AdOperations.jsx
-│           ├── RunScheduleModal.jsx
-│           ├── Missions.jsx
-│           └── AppVersion.jsx
-└── api/
-    ├── index.js                     # Express entry point (port 3000)
-    ├── firebaseAdmin.js             # Admin SDK init from env vars
-    ├── routes/
-    │   ├── missions.js              # Mission CRUD routes
-    │   └── versionRoutes.js        # App version routes
-    └── services/
-        ├── missionService.js
-        └── versionService.js
+└── src/
+    ├── App.jsx                      # Router + AuthProvider + ProtectedRoute
+    ├── main.jsx                     # React entry point
+    ├── index.css                    # Tailwind directives + CSS custom properties
+    ├── lib/
+    │   ├── firebase.js              # Firestore + Storage client init
+    │   ├── uploadMedia.js           # Firebase Storage upload helpers
+    │   ├── adConstants.js           # Shared: PLACEMENT_LABELS, TYPE_LABELS, PROJECT_LABELS
+    │   └── utils.js                 # cn() helper (clsx + tailwind-merge)
+    ├── context/
+    │   └── AuthContext.jsx          # Session context + login/logout
+    ├── pages/
+    │   ├── LandingPage.jsx
+    │   ├── LoginPage.jsx
+    │   ├── BrandDashboard.jsx
+    │   └── DevDashboard.jsx
+    └── components/
+        ├── ui/                      # shadcn/ui primitives (CLI-managed)
+        ├── brand/                   # Brand dashboard feature components
+        │   ├── BrandSidebar.jsx
+        │   ├── BrandTopBar.jsx
+        │   ├── UploadZone.jsx       # Firebase Storage upload (images + videos)
+        │   └── MediaGallery.jsx
+        └── dev/                     # Dev dashboard feature components
+            ├── DevSidebar.jsx
+            ├── DevTopBar.jsx
+            ├── ManageBrands.jsx
+            ├── AdRequests.jsx
+            ├── AdOperations.jsx
+            ├── RunScheduleModal.jsx
+            ├── Missions.jsx
+            └── AppVersion.jsx
 ```
+
+> The game API source lives in the separate [`sena-missions-api`](https://github.com/xtocodex/sena-missions-api) repo.
 
 ---
 
@@ -181,46 +172,36 @@ Session shape:
 | `missions/{id}` | `id`, `type` (daily\|weekly), `description`, `active`, `rewards[]`, `createdAt` |
 | `appVersions/config` | `android_version`, `ios_version` |
 
+> The `missions`, `players`, and `appVersions` collections are also read/written by the [`sena-missions-api`](https://github.com/xtocodex/sena-missions-api) service via the Firebase Admin SDK.
+
 ---
 
-## API Reference
+## Game API
 
-Base URL: `http://localhost:3000`
+The game-client API (missions, players, app version) is maintained in a **separate repository** and deployed to Cloud Run:
 
-**Authentication:** Write endpoints require the `x-api-key` header matching `process.env.API_KEY`. Read endpoints are public.
+- **Repo:** [`xtocodex/sena-missions-api`](https://github.com/xtocodex/sena-missions-api)
+- **Base URL (prod):** `https://sena-missions-api-332405485338.us-central1.run.app`
+- **Endpoint reference:** see that repo's `README.md`
 
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| `GET` | `/missions/daily` | — | Fetch active daily missions |
-| `GET` | `/missions/weekly` | — | Fetch active weekly missions |
-| `POST` | `/missions` | Required | Create a mission |
-| `PUT` | `/missions/:id` | Required | Update a mission |
-| `DELETE` | `/missions/:id` | Required | Delete a mission |
-| `GET` | `/app-version` | — | Get current Android/iOS versions |
+If/when the website needs to call the API, set the base URL via a Vite env var and read it with `import.meta.env.VITE_API_BASE_URL` — **never** hardcode the URL or embed the API write-key (`x-api-key`) in frontend code. Public reads (`/missions/daily`, `/app-version`) need no auth; writes should stay behind the Firebase SDK + Firestore rules (as the dashboard does today) or a server-side proxy.
 
 ---
 
 ## Environment Variables
 
-Create `api/.env` from `api/.env.example`:
+The frontend's Firebase web config lives in `src/lib/firebase.js` (public web keys — safe to ship). Optional Vite env (`.env`, see `.env.example`):
 
 ```env
-FIREBASE_PROJECT_ID=
-FIREBASE_PRIVATE_KEY_ID=
-FIREBASE_PRIVATE_KEY=
-FIREBASE_CLIENT_EMAIL=
-FIREBASE_CLIENT_ID=
-API_KEY=
-PORT=3000
+# Base URL of the game API — only needed if/when the dashboard calls it directly.
+VITE_API_BASE_URL=https://sena-missions-api-332405485338.us-central1.run.app
 ```
 
-> `FIREBASE_PRIVATE_KEY` must include literal `\n` newlines as provided by the Firebase service account JSON.
+The API server's own secrets (`FIREBASE_*`, `API_KEY`) live in the [`sena-missions-api`](https://github.com/xtocodex/sena-missions-api) repo and on its Cloud Run service — not here.
 
 ---
 
 ## Docker
-
-Two separate Dockerfiles are provided:
 
 **Frontend** (project root) — builds the React app and serves it via Nginx on port 8080:
 ```bash
@@ -228,12 +209,7 @@ docker build -t sena-frontend .
 docker run -p 8080:8080 sena-frontend
 ```
 
-**API Server** (`api/`) — runs the Express server on port 8080:
-```bash
-cd api
-docker build -t sena-api .
-docker run --env-file .env -p 3000:8080 sena-api
-```
+The API server has its own Dockerfile in the [`sena-missions-api`](https://github.com/xtocodex/sena-missions-api) repo.
 
 ---
 
@@ -257,4 +233,3 @@ docker run --env-file .env -p 3000:8080 sena-api
 - N+1 Firestore query pattern in `AdRequests.fetchAllMedia` — a `collectionGroup` refactor is planned
 - Mission ID generation has a race condition under concurrent writes — transaction-based counter is planned
 - No test suite
-- No rate limiting on public API routes
