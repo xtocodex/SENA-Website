@@ -21,10 +21,10 @@ function SkeletonGrid() {
 
 function RequestCard({ req }) {
   return (
-    <Flex direction="col" className="rounded-xl border border-border bg-card p-4 gap-3">
+    <Flex direction="col" className="hud-corners group relative overflow-hidden rounded-md border border-border bg-card p-4 gap-3 transition-colors duration-200 hover:border-primary/30">
       <Flex align="start" justify="between" className="gap-2">
         <Flex direction="col" className="gap-0.5 min-w-0">
-          <span className="text-sm font-medium text-foreground truncate">{req.brandName}</span>
+          <span className="font-display text-sm font-semibold uppercase tracking-wide text-foreground truncate">{req.brandName}</span>
           <span className="text-xs text-muted-foreground">
             ₹{Number(req.denomination).toLocaleString()} × {req.quantity}
           </span>
@@ -33,8 +33,8 @@ function RequestCard({ req }) {
       </Flex>
 
       <Flex align="center" className="gap-1.5 text-xs text-muted-foreground">
-        <Coins className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-        <span className="tabular-nums">{Number(req.coinCost).toLocaleString()} coins</span>
+        <Coins className="w-3.5 h-3.5 text-primary shrink-0" />
+        <span className="font-display tabular-nums text-foreground">{Number(req.coinCost).toLocaleString()}</span> coins
         <span className="ml-auto">{formatDate(req.createdAt)}</span>
       </Flex>
 
@@ -62,7 +62,7 @@ export default function MyRequests({ user }) {
   return (
     <Flex direction="col" className="gap-5">
       <Flex direction="col" className="gap-1">
-        <h2 className="text-lg font-semibold text-foreground">My Requests</h2>
+        <h2 className="font-display text-lg font-bold uppercase tracking-wide text-foreground">My Requests</h2>
         <span className="text-xs text-muted-foreground">
           Track the status of your coupon redemptions.
         </span>

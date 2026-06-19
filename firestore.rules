@@ -100,10 +100,15 @@ service cloud.firestore {
     match /demoRequests/{docId}    { allow create: if true; allow read, update, delete: if false; }
 
     // ---- players ----
-    // Written exclusively by the Express API (firebase-admin SDK bypasses
-    // these rules). Web client must never touch this collection.
+    // Written exclusively by the Express API (firebase-admin SDK bypasses these
+    // rules) — writes stay closed. A signed-in player may READ only their own
+    // record, matched by their verified Google email. `.lower()` on the token
+    // email means casing can't block the match (stored email is API-lowercased).
+    // The web client must query: where('email','==', <own lowercased email>).
     match /players/{playerId} {
-      allow read, write: if false;
+      allow read:  if request.auth != null
+                      && resource.data.email == request.auth.token.email.lower();
+      allow write: if false;
     }
 
   }

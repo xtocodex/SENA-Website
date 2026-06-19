@@ -8,33 +8,45 @@ import RewardsGrid from "@/components/user/RewardsGrid";
 import MyRequests from "@/components/user/MyRequests";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeUser } from "@/lib/userAccount";
+import { subscribeVerifiedPlayer } from "@/lib/playerAccount";
 
 export default function UserDashboard() {
   const { session } = useAuth();
   const [activeNav, setActiveNav] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [player, setPlayer] = useState(undefined); // undefined = loading, null = unlinked, object = linked
 
-  // Live user doc (coins + mock stats), shared by every section.
+  // Live website profile doc (name / photo / email), shared by every section.
   useEffect(() => {
     if (!session?.id) return;
     const unsub = subscribeUser(session.id, setUser);
     return () => unsub();
   }, [session?.id]);
 
+  // Live verified game-player record, joined by the signed-in email.
+  // Coins and combat stats come from here (the real game data).
+  useEffect(() => {
+    if (!session?.email) return;
+    const unsub = subscribeVerifiedPlayer(session.email, setPlayer);
+    return () => unsub();
+  }, [session?.email]);
+
+  const coins = player?.coins ?? 0;
+
   const CONTENT_MAP = {
-    'overview':    () => <UserOverview user={user} />,
-    'rewards':     () => <RewardsGrid user={user} />,
+    'overview':    () => <UserOverview user={user} player={player} onNavigate={setActiveNav} />,
+    'rewards':     () => <RewardsGrid user={user} player={player} />,
     'my-requests': () => <MyRequests user={user} />,
   };
 
   const Content = CONTENT_MAP[activeNav] ?? (() => null);
 
   return (
-    <Flex direction="col" className="h-screen w-full overflow-hidden bg-background">
+    <Flex direction="col" className="hud-theme h-screen w-full overflow-hidden bg-background">
 
       <UserTopBar
-        coins={user?.coins}
+        coins={coins}
         sidebarOpen={sidebarOpen}
         onSidebarToggle={() => setSidebarOpen(v => !v)}
       />
@@ -54,8 +66,8 @@ export default function UserDashboard() {
           onClose={() => setSidebarOpen(false)}
         />
 
-        <ScrollArea className="flex-1">
-          <Flex direction="col" className="p-8">
+        <ScrollArea className="flex-1 hud-grid">
+          <Flex direction="col" className="p-5 md:p-8 max-w-6xl w-full mx-auto">
             <Content />
           </Flex>
         </ScrollArea>

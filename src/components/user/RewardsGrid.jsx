@@ -28,23 +28,27 @@ function BrandCard({ brand, onRedeem }) {
   const minCoins = fromPrice(brand.denominations);
 
   return (
-    <Flex direction="col" className="rounded-xl border border-border bg-card p-5 gap-4">
+    <Flex
+      direction="col"
+      className="hud-corners group relative overflow-hidden rounded-md border border-border bg-card p-5 gap-4 transition-colors duration-200 hover:border-primary/40"
+    >
+      <div aria-hidden="true" className="hud-stripes absolute inset-x-0 top-0 h-[3px] opacity-40 group-hover:opacity-90 transition-opacity" />
       <Flex align="start" justify="between" className="gap-3">
         <Flex align="center" className="gap-3 min-w-0">
-          <Flex align="center" justify="center" className="w-11 h-11 rounded-lg bg-muted border border-border overflow-hidden shrink-0">
+          <Flex align="center" justify="center" className="w-11 h-11 rounded-md bg-muted border border-border overflow-hidden shrink-0">
             {brand.logoUrl ? (
               <img src={brand.logoUrl} alt={brand.name} className="w-full h-full object-contain" />
             ) : (
               <Gift className="w-5 h-5 text-muted-foreground" />
             )}
           </Flex>
-          <span className="text-sm font-semibold text-foreground truncate" title={brand.name}>
+          <span className="font-display text-sm font-semibold uppercase tracking-wide text-foreground truncate" title={brand.name}>
             {brand.name}
           </span>
         </Flex>
         <span
           className={cn(
-            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium shrink-0",
+            "inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-[10px] font-display font-semibold tracking-wide shrink-0",
             outOfStock
               ? "bg-muted text-muted-foreground border border-border"
               : "bg-green-500/10 text-green-500 border border-green-500/20"
@@ -58,24 +62,24 @@ function BrandCard({ brand, onRedeem }) {
 
       {minCoins != null && (
         <Flex align="center" className="gap-1.5 text-xs text-muted-foreground">
-          <Coins className="w-3.5 h-3.5 text-amber-500" />
-          From {minCoins.toLocaleString()} coins
+          <Coins className="w-3.5 h-3.5 text-primary" />
+          From <span className="font-display font-semibold text-foreground tabular-nums">{minCoins.toLocaleString()}</span> coins
         </Flex>
       )}
 
       <Button
-        className="w-full"
+        className="w-full font-display font-semibold uppercase tracking-wider"
         variant={outOfStock ? "outline" : "default"}
         disabled={outOfStock}
         onClick={() => onRedeem(brand)}
       >
-        {outOfStock ? 'Out of stock' : 'Redeem'}
+        {outOfStock ? 'Out of Stock' : 'Redeem'}
       </Button>
     </Flex>
   );
 }
 
-export default function RewardsGrid({ user }) {
+export default function RewardsGrid({ user, player }) {
   const [brands, setBrands] = useState(null);
   const [active, setActive] = useState(null);
 
@@ -87,7 +91,7 @@ export default function RewardsGrid({ user }) {
   return (
     <Flex direction="col" className="gap-5">
       <Flex direction="col" className="gap-1">
-        <h2 className="text-lg font-semibold text-foreground">Rewards</h2>
+        <h2 className="font-display text-lg font-bold uppercase tracking-wide text-foreground">Supply Drops</h2>
         <span className="text-xs text-muted-foreground">
           Redeem your coins for coupons from our brand partners.
         </span>
@@ -111,6 +115,7 @@ export default function RewardsGrid({ user }) {
       <RedeemModal
         brand={active}
         user={user}
+        player={player}
         open={!!active}
         onClose={() => setActive(null)}
       />

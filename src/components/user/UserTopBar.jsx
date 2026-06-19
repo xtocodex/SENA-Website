@@ -39,11 +39,11 @@ export default function UserTopBar({ sidebarOpen, onSidebarToggle, coins }) {
           <Flex
             align="center"
             justify="center"
-            className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 shrink-0"
+            className="w-8 h-8 rounded-md bg-primary/10 border border-primary/30 shrink-0"
           >
             <Gamepad2 className="w-4 h-4 text-primary" />
           </Flex>
-          <span className="text-base font-black tracking-tight text-foreground hidden sm:block truncate">
+          <span className="font-display text-base font-bold uppercase tracking-wide text-foreground hidden sm:block truncate">
             GauravGo<span className="text-primary">Games</span>
           </span>
         </Flex>
@@ -54,10 +54,10 @@ export default function UserTopBar({ sidebarOpen, onSidebarToggle, coins }) {
         {typeof coins === 'number' && (
           <Flex
             align="center"
-            className="gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1"
+            className="gap-1.5 rounded-sm bg-primary/10 border border-primary/25 px-3 py-1"
           >
-            <Coins className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-            <span className="text-xs font-semibold text-amber-500 tabular-nums">
+            <Coins className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span className="font-display text-xs font-bold text-primary tabular-nums tracking-wide">
               {coins.toLocaleString()}
             </span>
           </Flex>
@@ -81,7 +81,7 @@ export default function UserTopBar({ sidebarOpen, onSidebarToggle, coins }) {
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5">
+            <Badge variant="secondary" className="font-display text-[10px] uppercase tracking-widest px-1.5 py-0 h-5">
               Player
             </Badge>
           </Flex>

@@ -1,20 +1,13 @@
 import { db } from '@/lib/firebase';
 import {
-  doc, collection, getDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp,
+  doc, collection, getDoc, setDoc, onSnapshot, query, orderBy, serverTimestamp,
 } from 'firebase/firestore';
 
 const COLLECTION = 'users';
 
-// Default mock stats — placeholders until the real game-player link lands.
-export const DEFAULT_STATS = {
-  matchesPlayed: 0,
-  matchesWon: 0,
-  adViews: 0,
-  adWatchTime: 0,
-};
-
-// Create the user doc on first Google sign-in if it doesn't exist yet.
-// Returns the (existing or freshly created) profile.
+// Create the website profile doc on first Google sign-in if it doesn't exist.
+// Coins and game stats are NOT stored here — they live on the verified game
+// player doc and are read live via lib/playerAccount.js. This doc is profile only.
 export async function ensureUserDoc(firebaseUser) {
   const ref = doc(db, COLLECTION, firebaseUser.uid);
   const snap = await getDoc(ref);
@@ -27,9 +20,6 @@ export async function ensureUserDoc(firebaseUser) {
     name: firebaseUser.displayName || firebaseUser.email || 'Player',
     photoURL: firebaseUser.photoURL || '',
     role: 'user',
-    coins: 0,
-    stats: { ...DEFAULT_STATS },
-    optionalData: '',
     createdAt: serverTimestamp(),
   });
   const fresh = await getDoc(ref);
@@ -51,9 +41,4 @@ export function subscribeUsers(cb) {
     (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
     () => cb([]),
   );
-}
-
-// Dev-only: manually settle a user's mock coins / stats (v1, until game link exists).
-export async function updateUser(uid, patch) {
-  await updateDoc(doc(db, COLLECTION, uid), { ...patch, updatedAt: serverTimestamp() });
 }
