@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Loader2, Gift, X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, Pencil, Trash2, Loader2, Gift, X, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Flex, Box } from "@/components/ui/layout";
 import {
   subscribeRewardBrands, createRewardBrand, updateRewardBrand, deleteRewardBrand,
+  uploadRewardBrandLogo,
 } from "@/lib/rewards";
 
 const EMPTY_FORM = {
@@ -33,6 +34,8 @@ const EMPTY_FORM = {
 function BrandFormDialog({ open, onClose, initial }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (open) {
@@ -53,6 +56,23 @@ function BrandFormDialog({ open, onClose, initial }) {
   }, [open, initial]);
 
   const setField = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const handleLogoFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadRewardBrandLogo(file);
+      setField('logoUrl', url);
+      toast.success('Logo uploaded.');
+    } catch (err) {
+      toast.error(err.message || 'Upload failed.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const setDenom = (i, k, v) => setForm((f) => ({
     ...f,
     denominations: f.denominations.map((d, idx) => idx === i ? { ...d, [k]: v } : d),
@@ -113,8 +133,35 @@ function BrandFormDialog({ open, onClose, initial }) {
           </Box>
 
           <Box className="space-y-2">
-            <Label htmlFor="rb-logo">Logo URL</Label>
-            <Input id="rb-logo" value={form.logoUrl} onChange={(e) => setField('logoUrl', e.target.value)} placeholder="https://…" />
+            <Label htmlFor="rb-logo">Brand logo</Label>
+            <Flex align="center" className="gap-3">
+              <Flex align="center" justify="center" className="w-12 h-12 rounded-md bg-muted border border-border overflow-hidden shrink-0">
+                {form.logoUrl
+                  ? <img src={form.logoUrl} alt="" className="w-full h-full object-contain" />
+                  : <Gift className="w-5 h-5 text-muted-foreground" />}
+              </Flex>
+              <Box className="space-y-2 flex-1">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleLogoFile}
+                />
+                <Button
+                  type="button" variant="outline" size="sm" className="gap-1.5"
+                  onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                >
+                  {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  {uploading ? 'Uploading…' : 'Upload image'}
+                </Button>
+                <Input
+                  id="rb-logo" value={form.logoUrl}
+                  onChange={(e) => setField('logoUrl', e.target.value)}
+                  placeholder="…or paste a direct image URL"
+                />
+              </Box>
+            </Flex>
           </Box>
 
           <Flex className="gap-3">
@@ -166,7 +213,7 @@ function BrandFormDialog({ open, onClose, initial }) {
 
         <DialogFooter className="pt-2">
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button onClick={handleSave} disabled={!valid || saving}>
+          <Button onClick={handleSave} disabled={!valid || saving || uploading}>
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             {initial ? 'Save changes' : 'Add brand'}
           </Button>
