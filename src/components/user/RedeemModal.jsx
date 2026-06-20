@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Flex, Box, Grid } from "@/components/ui/layout";
 import { createCouponRequest } from "@/lib/rewards";
 
-export default function RedeemModal({ brand, user, open, onClose }) {
+export default function RedeemModal({ brand, user, player, open, onClose }) {
   const denominations = useMemo(() => brand?.denominations || [], [brand]);
   const available = brand?.availableCoupons ?? 0;
 
@@ -30,7 +30,7 @@ export default function RedeemModal({ brand, user, open, onClose }) {
   }, [open, brand?.id]);
 
   const denomination = denominations[Number(denomIndex)] || null;
-  const coins = user?.coins ?? 0;
+  const coins = player?.coins ?? 0; // balance from the verified game account (single coins source)
   const coinCost = denomination ? (denomination.coinCost || 0) * quantity : 0;
 
   const maxByStock = Math.max(1, available);

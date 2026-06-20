@@ -1,11 +1,29 @@
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import {
   collection, doc, addDoc, updateDoc, deleteDoc,
   onSnapshot, query, where, orderBy, serverTimestamp, increment,
 } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const REWARD_BRANDS = 'reward_brands';
 const COUPON_REQUESTS = 'coupon_requests';
+const MAX_LOGO_SIZE = 2 * 1024 * 1024; // 2 MB
+
+// Uploads a brand logo to Firebase Storage and returns its permanent download
+// URL. Used by the Dev Reward Brands form — Dev has no Firebase Auth, so the
+// `rewardBrandLogos/` Storage path is intentionally open (see storage.rules).
+export async function uploadRewardBrandLogo(file) {
+  if (!file?.type?.startsWith('image/')) {
+    throw new Error('Please choose an image file (PNG, JPG, WEBP).');
+  }
+  if (file.size > MAX_LOGO_SIZE) {
+    throw new Error('Image too large. Max size is 2 MB.');
+  }
+  const safeName = file.name.replace(/[^\w.\-]/g, '_');
+  const storageRef = ref(storage, `rewardBrandLogos/${Date.now()}_${safeName}`);
+  await uploadBytes(storageRef, file);
+  return getDownloadURL(storageRef);
+}
 
 // =============================================================================
 // Reward brands (Dev-curated coupon catalog)

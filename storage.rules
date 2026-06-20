@@ -44,6 +44,18 @@ service firebase.storage {
       allow delete: if isOwner(uid) || true;     // TODO: tighten to isDev() once available (DEV deletes from ManageBrands)
     }
 
+    // ---- Reward brand logos (Dev-curated coupon catalog) ----
+    // Path written by RewardBrands.jsx via uploadRewardBrandLogo().
+    // DEV users have NO Firebase Auth, so create CANNOT be owner-scoped — the
+    // catalog is Dev-only and gated by the app's Dev role, not by Storage auth.
+    // Public read/write here mirrors the permissive `|| true` posture above.
+    match /rewardBrandLogos/{fileName} {
+      allow read:   if true;
+      allow create: if true;   // TODO: tighten to isDev() once DEV has Firebase Auth
+      allow update: if true;   // TODO: tighten to isDev()
+      allow delete: if true;   // TODO: tighten to isDev()
+    }
+
     // ---- Default deny ----
     // Any path not matched above is blocked.
     match /{allPaths=**} {

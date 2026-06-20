@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -55,3 +56,51 @@
     opacity: 1 !important;
   }
 }
+
+/* =====================================================================
+   PUBG / tactical combat-HUD theme — scoped to the player dashboard
+   (`.hud-theme`). Keeps the global amber-on-black tokens, adds the
+   gritty FPS-lobby flavor: tactical grid, corner brackets, hazard
+   stripes and amber glow. Does NOT affect Brand/Dev admin surfaces.
+   ===================================================================== */
+
+/* Tactical grid backdrop with a soft vignette so the center reads clean */
+.hud-grid {
+  background-color: hsl(var(--background));
+  background-image:
+    radial-gradient(120% 80% at 50% 0%, transparent 55%, hsl(var(--background)) 100%),
+    linear-gradient(hsl(var(--border) / 0.45) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--border) / 0.45) 1px, transparent 1px);
+  background-size: 100% 100%, 38px 38px, 38px 38px;
+  background-position: 0 0, -1px -1px, -1px -1px;
+}
+
+/* HUD corner brackets — no extra DOM needed */
+.hud-corners { position: relative; }
+.hud-corners::before,
+.hud-corners::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: hsl(var(--primary) / 0.75);
+  pointer-events: none;
+}
+.hud-corners::before { top: 7px;    left: 7px;  border-top: 2px solid;    border-left: 2px solid; }
+.hud-corners::after  { bottom: 7px; right: 7px; border-bottom: 2px solid; border-right: 2px solid; }
+
+/* Diagonal hazard stripes (for accent slivers / banners) */
+.hud-stripes {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    hsl(var(--primary) / 0.85) 0,
+    hsl(var(--primary) / 0.85) 7px,
+    transparent 7px,
+    transparent 15px
+  );
+}
+
+/* Amber glow helpers */
+.hud-glow { box-shadow: 0 0 0 1px hsl(var(--primary) / 0.15), 0 0 28px -8px hsl(var(--primary) / 0.5); }
+.text-glow { text-shadow: 0 0 18px hsl(var(--primary) / 0.45); }
+.ring-glow { filter: drop-shadow(0 0 6px hsl(var(--primary) / 0.55)); }
