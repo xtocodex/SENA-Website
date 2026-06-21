@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -366,6 +366,15 @@ function Navbar({ scrolled }) {
   const [open, setOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
   const navigate = useNavigate();
+  const panelRef = useRef(null);
+
+  // Close the mobile menu on Escape
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
 
   useEffect(() => {
     const ids = ['home', 'about', 'games', 'services', 'brand-partners', 'esports-community', 'influencer-partners'];
@@ -445,25 +454,41 @@ function Navbar({ scrolled }) {
 
         {/* Hamburger */}
         <button
-          className="md:hidden bg-transparent border-0 cursor-pointer text-white p-1"
+          className="md:hidden inline-flex items-center justify-center w-11 h-11 -mr-2 bg-transparent border-0 cursor-pointer text-white"
           onClick={() => setOpen(v => !v)}
           aria-label="Toggle menu"
+          aria-expanded={open}
         >
           {open ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
+      {/* Mobile backdrop — tap outside to close */}
+      <div
+        className="md:hidden fixed inset-0 -z-10"
+        onClick={() => setOpen(false)}
+        aria-hidden="true"
+        style={{
+          background: 'rgba(0,0,0,.5)',
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? 'auto' : 'none',
+          transition: 'opacity .35s ease',
+        }}
+      />
+
       {/* Mobile drawer */}
       <div
-        className="md:hidden overflow-hidden"
+        className="md:hidden overflow-y-auto"
         style={{
-          maxHeight: open ? '380px' : '0',
+          maxHeight: open
+            ? `min(${panelRef.current?.scrollHeight ?? 9999}px, calc(100dvh - 4.5rem))`
+            : '0',
           transition: 'max-height .35s ease',
           background: '#0e0e0e',
           borderTop: open ? '1px solid rgba(255,215,0,.14)' : '1px solid transparent',
         }}
       >
-        <div className="px-6 py-5 flex flex-col gap-4">
+        <div ref={panelRef} className="px-6 py-5 flex flex-col gap-4">
           {NAV_LINKS.map(l => (
             <button
               key={l}
