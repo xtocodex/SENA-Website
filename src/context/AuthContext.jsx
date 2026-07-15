@@ -7,6 +7,14 @@ const AuthContext = createContext(null);
 
 export const SESSION_KEY = 'sena_session';
 
+// Per-account remembered workspace tier ('max' | 'mini'), keyed by uid so two
+// Google accounts on the same browser don't share a choice.
+const tierKey = (id) => `sena_tier_${id}`;
+export const getRememberedTier = (id) => {
+  const t = id ? localStorage.getItem(tierKey(id)) : null;
+  return t === 'max' || t === 'mini' ? t : null;
+};
+
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const navigate = useNavigate();
@@ -29,9 +37,25 @@ export function AuthProvider({ children }) {
       id: userData.id,
       brandName: userData.brandName || '',
       name: userData.name || userData.brandName || userData.email || '',
+      tier: userData.tier ?? getRememberedTier(userData.id),
     };
     localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
     setSession(sessionData);
+  };
+
+  // Choose (or clear, with null) the SENA MAX / SENA MINI workspace for this
+  // session. The choice is remembered per account and re-applied on next login.
+  const setTier = (tier) => {
+    setSession((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, tier };
+      localStorage.setItem(SESSION_KEY, JSON.stringify(next));
+      if (prev.id) {
+        if (tier) localStorage.setItem(tierKey(prev.id), tier);
+        else localStorage.removeItem(tierKey(prev.id));
+      }
+      return next;
+    });
   };
 
   const logout = () => {
@@ -42,7 +66,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, login, logout }}>
+    <AuthContext.Provider value={{ session, login, logout, setTier }}>
       {children}
     </AuthContext.Provider>
   );

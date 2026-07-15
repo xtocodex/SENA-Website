@@ -7,6 +7,8 @@ import { useAuth } from '@/context/AuthContext';
 import { Flex } from "@/components/ui/layout";
 import { ensureUserDoc } from '@/lib/userAccount';
 import UserDashboard from '@/pages/UserDashboard';
+import MiniUserDashboard from '@/pages/MiniUserDashboard';
+import TierSelect from '@/pages/TierSelect';
 
 function LoadingScreen() {
   return (
@@ -19,8 +21,12 @@ function LoadingScreen() {
 
 // Players get instant access — no approval gate. On first sign-in the user doc is
 // seeded with mock stats/coins; unauthenticated visitors are redirected to /login.
+// After auth, a workspace gate routes the session: SENA MAX → the existing
+// dashboard (MAX collections), SENA MINI → the game-linked dashboard
+// (`SENA Mini/...` namespace). The choice lives in session.tier and is
+// remembered per account (see AuthContext).
 export default function UserGate() {
-  const { login } = useAuth();
+  const { login, session } = useAuth();
   const [authLoading, setAuthLoading] = useState(true);
   const [user, setUser] = useState(null);
   const sessionInitialized = useRef(false);
@@ -56,5 +62,7 @@ export default function UserGate() {
 
   if (authLoading) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace />;
-  return <UserDashboard />;
+  if (session?.tier === 'mini') return <MiniUserDashboard />;
+  if (session?.tier === 'max') return <UserDashboard />;
+  return <TierSelect />;
 }
