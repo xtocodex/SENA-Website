@@ -7,6 +7,21 @@ import { MINI_STAT_FIELDS, MINI_DERIVED_FIELDS, hasMiniStat } from '@/lib/mini/s
 import { toDate } from '@/lib/mini/players';
 import MiniRecentMatches from './MiniRecentMatches';
 
+// MINI overview — the landing page, deliberately NOT a container for everything.
+// Each live section owns one job:
+//   Overview   → what's happening now (this file)
+//   Statistics → every number: full stat tiles, charts, full match table
+//   Profile    → who you are: badges, rank history, linked account
+// So the badge grid, the six remaining stat tiles and the full match table live
+// in those sections, not here. The four headline tiles below intentionally also
+// appear on Statistics: a landing page teasing detail is orientation, not
+// duplication.
+//
+// `player`: undefined = loading, null = unlinked.
+
+// The scannable four. Order is explicit — it does not follow MINI_STAT_FIELDS.
+const HEADLINE_KEYS = ['wins', 'totalKills', 'matchesPlayed'];
+
 function StatTile({ icon: Icon, label, value }) {
   return (
     <Card>
@@ -29,10 +44,7 @@ function StatTile({ icon: Icon, label, value }) {
   );
 }
 
-// MINI overview: identity + presence + season rank + badges + combat stats,
-// all live from the game-owned `SENA Mini/players/data` record joined by the
-// signed-in Google email. `player`: undefined = loading, null = unlinked.
-export default function MiniOverview({ player, gameVersion, matches }) {
+export default function MiniOverview({ player, gameVersion, matches, onNavigate }) {
   if (player === undefined) {
     return (
       <Flex align="center" justify="center" className="py-24">
@@ -71,23 +83,29 @@ export default function MiniOverview({ player, gameVersion, matches }) {
     ? player.currentSeasonRank
     : null;
 
+  const tiles = HEADLINE_KEYS
+    .map((k) => MINI_STAT_FIELDS.find((f) => f.key === k))
+    .filter((f) => f && hasMiniStat(stats, f.key));
+  const winRate = MINI_DERIVED_FIELDS.find((f) => f.key === 'winRate');
+  const winRateValue = winRate?.compute(stats);
+
   return (
     <Flex direction="col" className="gap-6">
 
-      {/* Identity header */}
+      {/* Identity strip — orientation only; the full profile lives on Profile. */}
       <Card>
-        <CardContent className="p-6">
-          <Flex align="center" className="gap-5 flex-wrap">
-            <Avatar className="w-16 h-16 border border-primary/30">
+        <CardContent className="p-5">
+          <Flex align="center" className="gap-4 flex-wrap">
+            <Avatar className="w-12 h-12 border border-primary/30">
               {player.avatarUrl ? <AvatarImage src={player.avatarUrl} alt={player.name} /> : null}
-              <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
+              <AvatarFallback className="bg-primary/10 text-primary font-bold">
                 {(player.name || '??').slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
 
-            <Flex direction="col" className="gap-1.5 min-w-0 flex-1">
+            <Flex direction="col" className="gap-1 min-w-0 flex-1">
               <Flex align="center" className="gap-2.5 flex-wrap">
-                <h2 className="font-display text-xl font-bold uppercase tracking-wide text-foreground truncate">
+                <h2 className="font-display text-lg font-bold uppercase tracking-wide text-foreground truncate">
                   {player.name || 'Player'}
                 </h2>
                 <Badge
@@ -114,51 +132,69 @@ export default function MiniOverview({ player, gameVersion, matches }) {
                   </Flex>
                 )}
               </Flex>
-
-              {Array.isArray(player.badges) && player.badges.length > 0 && (
-                <Flex className="gap-1.5 flex-wrap mt-1">
-                  {player.badges.filter((b) => b && b !== 'None').map((b) => (
-                    <Badge key={b} variant="outline" className="text-[10px] uppercase tracking-wide border-primary/30 text-primary">
-                      {b}
-                    </Badge>
-                  ))}
-                </Flex>
-              )}
             </Flex>
+
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('profile')}
+                className="text-xs text-primary hover:underline cursor-pointer shrink-0"
+              >
+                View profile →
+              </button>
+            )}
           </Flex>
         </CardContent>
       </Card>
 
-      {/* Combat stats */}
+      {/* Headline numbers — the full set lives on Statistics. */}
       <Flex direction="col" className="gap-3">
-        <Flex align="center" className="gap-2">
-          <Swords className="w-4 h-4 text-primary" />
-          <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-display font-semibold">
-            // Combat Record
-          </span>
+        <Flex align="center" justify="between" className="gap-2">
+          <Flex align="center" className="gap-2">
+            <Swords className="w-4 h-4 text-primary" />
+            <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-display font-semibold">
+              // Combat Record
+            </span>
+          </Flex>
+          {onNavigate && (
+            <button
+              onClick={() => onNavigate('statistics')}
+              className="text-xs text-primary hover:underline cursor-pointer"
+            >
+              All statistics →
+            </button>
+          )}
         </Flex>
-        <Grid className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {MINI_STAT_FIELDS.filter((f) => hasMiniStat(stats, f.key)).map((f) => (
-            <StatTile key={f.key} icon={f.icon} label={f.label} value={f.format(stats[f.key])} />
-          ))}
-          {MINI_DERIVED_FIELDS.map((f) => {
-            const v = f.compute(stats);
-            return v == null ? null : (
-              <StatTile key={f.key} icon={f.icon} label={f.label} value={f.format(v)} />
-            );
-          })}
-        </Grid>
-        {Object.keys(stats).length === 0 && (
+
+        {Object.keys(stats).length === 0 ? (
           <p className="text-xs text-muted-foreground">
             No matches recorded yet — stats appear after your first game.
           </p>
+        ) : (
+          <Grid className="grid-cols-2 lg:grid-cols-4 gap-3">
+            {tiles.map((f) => (
+              <StatTile key={f.key} icon={f.icon} label={f.label} value={f.format(stats[f.key])} />
+            ))}
+            {winRateValue != null && (
+              <StatTile icon={winRate.icon} label={winRate.label} value={winRate.format(winRateValue)} />
+            )}
+          </Grid>
         )}
       </Flex>
 
-      {/* Recent matches (live matchHistory — hidden until matches exist) */}
-      <MiniRecentMatches matches={matches} />
+      {/* Latest matches — a teaser; the full table is on Statistics. */}
+      <MiniRecentMatches
+        matches={matches?.slice(0, 3)}
+        action={onNavigate && (
+          <button
+            onClick={() => onNavigate('statistics')}
+            className="text-xs text-primary hover:underline cursor-pointer"
+          >
+            View all →
+          </button>
+        )}
+      />
 
-      {/* Patch notes */}
+      {/* Patch notes — Overview owns this; nothing else shows it. */}
       {gameVersion && (
         <Card>
           <CardHeader className="pb-2">
@@ -178,7 +214,7 @@ export default function MiniOverview({ player, gameVersion, matches }) {
       )}
 
       <Box className="text-[11px] text-muted-foreground">
-        Stats sync live from SENA MINI. Wallet & missions arrive in a future update.
+        Stats sync live from SENA MINI. Wallet &amp; missions arrive in a future update.
       </Box>
     </Flex>
   );

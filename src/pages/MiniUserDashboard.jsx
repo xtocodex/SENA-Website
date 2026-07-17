@@ -1,40 +1,68 @@
 import { useEffect, useState } from 'react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Flex } from "@/components/ui/layout";
-import { LayoutDashboard, Trophy, Target, Wallet, Package, Store, Bell } from 'lucide-react';
+import {
+  LayoutDashboard, Trophy, Target, Wallet, Package, Store, Bell,
+  BarChart3, Gift, Ticket, ShoppingBag, User, Settings,
+} from 'lucide-react';
 import PortalSidebar from "@/components/portal/PortalSidebar";
 import PortalTopBar from "@/components/portal/PortalTopBar";
 import MiniOverview from "@/components/user/mini/MiniOverview";
 import MiniLeaderboard from "@/components/user/mini/MiniLeaderboard";
 import MiniMissions from "@/components/user/mini/MiniMissions";
+import MiniStatistics from "@/components/user/mini/MiniStatistics";
+import MiniRewards from "@/components/user/mini/MiniRewards";
 import MiniWallet from "@/components/user/mini/MiniWallet";
 import MiniInventory from "@/components/user/mini/MiniInventory";
 import MiniShop from "@/components/user/mini/MiniShop";
+import MiniCoupons from "@/components/user/mini/MiniCoupons";
+import MiniOrders from "@/components/user/mini/MiniOrders";
+import MiniProfile from "@/components/user/mini/MiniProfile";
+import MiniSettings from "@/components/user/mini/MiniSettings";
 import MiniNotifications from "@/components/user/mini/MiniNotifications";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeMiniPlayer, subscribeMatchHistory } from "@/lib/mini/players";
 import { subscribeGameVersion } from "@/lib/mini/gameVersion";
 
-// Two nav groups: LIVE reads real game data from the `SENA Mini/...`
-// namespace; PREVIEW sections are 100% mock (lib/mini/mockShowcase.js) and
-// carry the DEMO treatment on their pages.
+// LIVE reads real game data from the `SENA Mini/...` namespace; PREVIEW groups
+// are 100% mock (lib/mini/mockShowcase.js) and carry the DEMO treatment on their
+// pages. The preview grouping mirrors the v2 prototype's player portal
+// (v2/Website/js/app.js) so the two can be compared section by section.
 const NAV_GROUPS = [
   {
     title: '// Combat Menu',
     items: [
       { id: 'overview',    label: 'Overview',    icon: LayoutDashboard },
+      { id: 'statistics',  label: 'Statistics',  icon: BarChart3 },
+      { id: 'profile',     label: 'Profile',     icon: User },
       { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
     ],
   },
   {
-    title: '// Preview',
+    title: '// Preview · Play',
     demo: true,
     items: [
-      { id: 'missions',      label: 'Missions',      icon: Target },
-      { id: 'wallet',        label: 'Wallet',        icon: Wallet },
-      { id: 'inventory',     label: 'Inventory',     icon: Package },
-      { id: 'shop',          label: 'Shop',          icon: Store },
+      { id: 'missions', label: 'Missions', icon: Target },
+    ],
+  },
+  {
+    title: '// Preview · Rewards',
+    demo: true,
+    items: [
+      { id: 'rewards',   label: 'Rewards',   icon: Gift },
+      { id: 'wallet',    label: 'Wallet',    icon: Wallet },
+      { id: 'shop',      label: 'Shop',      icon: Store },
+      { id: 'coupons',   label: 'Coupons',   icon: Ticket },
+      { id: 'orders',    label: 'Orders',    icon: ShoppingBag },
+      { id: 'inventory', label: 'Inventory', icon: Package },
+    ],
+  },
+  {
+    title: '// Preview · Account',
+    demo: true,
+    items: [
       { id: 'notifications', label: 'Notifications', icon: Bell },
+      { id: 'settings',      label: 'Settings',      icon: Settings },
     ],
   },
 ];
@@ -70,19 +98,27 @@ export default function MiniUserDashboard() {
       setMatches([]);
       return;
     }
-    const unsub = subscribeMatchHistory(player.id, setMatches);
+    // 50 rather than the default 10: Statistics buckets the last 7 days from
+    // this same feed, so it needs more than one screenful of recent matches.
+    const unsub = subscribeMatchHistory(player.id, setMatches, { max: 50 });
     return () => unsub();
   }, [player?.id]);
 
   const CONTENT_MAP = {
     // Live — real game data from the SENA Mini namespace.
-    'overview':    () => <MiniOverview player={player} gameVersion={gameVersion} matches={matches} />,
+    'overview':    () => <MiniOverview player={player} gameVersion={gameVersion} matches={matches} onNavigate={setActiveNav} />,
+    'statistics':  () => <MiniStatistics player={player} matches={matches} />,
+    'profile':     () => <MiniProfile player={player} matches={matches} />,
     'leaderboard': () => <MiniLeaderboard ownEmail={session?.email} />,
     // Preview — 100% mock showcase (lib/mini/mockShowcase.js), DEMO-badged.
     'missions':      () => <MiniMissions />,
+    'rewards':       () => <MiniRewards />,
     'wallet':        () => <MiniWallet />,
-    'inventory':     () => <MiniInventory />,
     'shop':          () => <MiniShop />,
+    'coupons':       () => <MiniCoupons />,
+    'orders':        () => <MiniOrders />,
+    'inventory':     () => <MiniInventory />,
+    'settings':      () => <MiniSettings />,
     'notifications': () => <MiniNotifications />,
   };
 

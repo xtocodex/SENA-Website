@@ -1,4 +1,5 @@
 import { Trophy, Gamepad2, Skull, Flame, HeartPulse, Medal, Timer, Percent, Crosshair, HeartHandshake, Zap, Target } from 'lucide-react';
+import { toDate } from './players';
 
 // Curated stat fields for the SENA MINI player dashboard (mirrors the pattern
 // of lib/playerStats.js used by MAX). Values live in the game doc's `stats`
@@ -48,3 +49,42 @@ export const MINI_DERIVED_FIELDS = [
 ];
 
 export const hasMiniStat = (stats, key) => stats != null && stats[key] != null;
+
+// =============================================================================
+// Derivations for the Statistics section — computed from the locked contract
+// only (stats map + matchHistory). Nothing here invents data.
+// =============================================================================
+
+// Kills bucketed into the last `days` calendar days, oldest first, for the bar
+// chart. Reads matchHistory `timestamp` + `kills` (contract v1.0). Matches older
+// than the window, or with an unparseable timestamp, are ignored.
+export function killsPerDay(matches, days = 7) {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - (days - 1));
+
+  const buckets = [];
+  for (let i = 0; i < days; i += 1) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    buckets.push({ at: d.getTime(), label: d.toLocaleDateString([], { weekday: 'short' }), value: 0 });
+  }
+
+  (matches || []).forEach((m) => {
+    const d = toDate(m.timestamp);
+    if (!d) return;
+    d.setHours(0, 0, 0, 0);
+    const b = buckets.find((x) => x.at === d.getTime());
+    if (b) b.value += Number(m.kills) || 0;
+  });
+
+  return buckets;
+}
+
+// Win/loss split for the donut. `wins` is authoritative; losses are the
+// remainder of matchesPlayed, clamped so bad data can't produce a negative arc.
+export function winLoss(stats) {
+  const wins = Math.max(Number(stats?.wins) || 0, 0);
+  const played = Math.max(Number(stats?.matchesPlayed) || 0, 0);
+  return { wins: Math.min(wins, played), losses: Math.max(played - wins, 0), played };
+}

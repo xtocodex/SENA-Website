@@ -19,16 +19,21 @@ const when = (ts) => {
 
 // LIVE section — renders the player's matchHistory subcollection (locked
 // contract v1.0). Not shown at all until the player has recorded matches.
-export default function MiniRecentMatches({ matches }) {
+// `action` is an optional node in the header (Overview uses it to link through
+// to the full table on Statistics).
+export default function MiniRecentMatches({ matches, action }) {
   if (!matches || matches.length === 0) return null;
 
   return (
     <Flex direction="col" className="gap-3">
-      <Flex align="center" className="gap-2">
-        <Swords className="w-4 h-4 text-primary" />
-        <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-display font-semibold">
-          // Recent Matches
-        </span>
+      <Flex align="center" justify="between" className="gap-2">
+        <Flex align="center" className="gap-2">
+          <Swords className="w-4 h-4 text-primary" />
+          <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-display font-semibold">
+            // Recent Matches
+          </span>
+        </Flex>
+        {action}
       </Flex>
 
       <Card>
