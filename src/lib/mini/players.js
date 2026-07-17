@@ -55,11 +55,22 @@ export function subscribeMiniPlayer(email, cb) {
 
 // Top players by wins for the MINI leaderboard. Docs without a `stats` map
 // (players who never finished a match) are skipped by Firestore's orderBy.
+//
+// Test docs (`isTestDoc: true`, contract §3.4) are excluded — otherwise our own
+// fixture outranks every real player. The filter is CLIENT-SIDE on purpose:
+// `where('isTestDoc','!=',true)` would look equivalent but silently drops every
+// doc that lacks the field — i.e. all real players — because Firestore's `!=`
+// does not match missing fields. We over-fetch a little and trim after.
 export function subscribeMiniLeaderboard(cb, { max = 20 } = {}) {
-  const q = query(PLAYERS, orderBy('stats.wins', 'desc'), fbLimit(max));
+  const q = query(PLAYERS, orderBy('stats.wins', 'desc'), fbLimit(max + 5));
   return onSnapshot(
     q,
-    (snap) => cb(snap.docs.map(withId)),
+    (snap) => cb(
+      snap.docs
+        .map(withId)
+        .filter((p) => p.isTestDoc !== true)
+        .slice(0, max),
+    ),
     () => cb([]),
   );
 }
