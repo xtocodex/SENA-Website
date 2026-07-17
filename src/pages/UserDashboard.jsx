@@ -1,14 +1,26 @@
 import { useEffect, useState } from 'react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Flex } from "@/components/ui/layout";
-import UserSidebar from "@/components/user/UserSidebar";
-import UserTopBar from "@/components/user/UserTopBar";
+import { LayoutDashboard, Gift, Ticket, Coins } from 'lucide-react';
+import PortalSidebar from "@/components/portal/PortalSidebar";
+import PortalTopBar from "@/components/portal/PortalTopBar";
 import UserOverview from "@/components/user/UserOverview";
 import RewardsGrid from "@/components/user/RewardsGrid";
 import MyRequests from "@/components/user/MyRequests";
 import { useAuth } from "@/context/AuthContext";
 import { subscribeUser } from "@/lib/userAccount";
 import { subscribeVerifiedPlayer } from "@/lib/playerAccount";
+
+const NAV_GROUPS = [
+  {
+    title: '// Operator Menu',
+    items: [
+      { id: 'overview',    label: 'Overview',    icon: LayoutDashboard },
+      { id: 'rewards',     label: 'Rewards',     icon: Gift },
+      { id: 'my-requests', label: 'My Requests', icon: Ticket },
+    ],
+  },
+];
 
 export default function UserDashboard() {
   const { session } = useAuth();
@@ -45,10 +57,21 @@ export default function UserDashboard() {
   return (
     <Flex direction="col" className="hud-theme h-screen w-full overflow-hidden bg-background">
 
-      <UserTopBar
-        coins={coins}
+      <PortalTopBar
         sidebarOpen={sidebarOpen}
         onSidebarToggle={() => setSidebarOpen(v => !v)}
+        roleLabel="Player"
+        rightSlot={
+          <Flex
+            align="center"
+            className="gap-1.5 rounded-sm bg-primary/10 border border-primary/25 px-3 py-1"
+          >
+            <Coins className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span className="font-display text-xs font-bold text-primary tabular-nums tracking-wide">
+              {coins.toLocaleString()}
+            </span>
+          </Flex>
+        }
       />
 
       <Flex className="flex-1 min-h-0 relative">
@@ -59,7 +82,8 @@ export default function UserDashboard() {
           />
         )}
 
-        <UserSidebar
+        <PortalSidebar
+          groups={NAV_GROUPS}
           activeNav={activeNav}
           onNavChange={setActiveNav}
           sidebarOpen={sidebarOpen}

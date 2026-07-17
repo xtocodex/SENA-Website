@@ -111,5 +111,111 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // =============================================================================
+    // SENA Game Rules (nested under the "SENA Mini" top-level collection)
+    // =============================================================================
+    // Added by the game developer directly in the Firebase console (deployed
+    // 2026-07). Synced into this repo on 2026-07-14 so `firebase deploy` does NOT
+    // wipe the live game's access. Do not remove without coordinating with the
+    // game team. The `{senaRoot}` wildcard matches any top-level collection
+    // segment (in practice: "SENA Mini"); paths are `SENA Mini/{area}/data/{doc}`.
+    // `matchHistory` and `teamChats` are forward-looking (no data yet).
+    match /{senaRoot} {
+
+      // Game Version Check
+      match /gameVersion/data/{document=**} {
+        allow read: if true;
+        allow write: if false;
+      }
+
+      // Players
+      match /players/data/{userId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null && request.auth.uid == userId;
+
+        // Match History subcollection
+        match /matchHistory/{matchId} {
+          allow read: if request.auth != null;
+          allow write: if request.auth != null && request.auth.uid == userId;
+        }
+      }
+
+      // Friend Requests
+      match /friendRequests/data/{requestId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null &&
+          request.resource.data.fromID == request.auth.uid;
+        allow update, delete: if request.auth != null && (
+          resource.data.toID   == request.auth.uid ||
+          resource.data.fromID == request.auth.uid
+        );
+      }
+
+      // Party Invites
+      match /partyInvites/data/{inviteID} {
+        allow read: if request.auth != null && (
+          resource.data.fromID == request.auth.uid ||
+          resource.data.toID == request.auth.uid
+        );
+        allow create: if request.auth != null &&
+          request.resource.data.fromID == request.auth.uid;
+        allow update: if request.auth != null &&
+          resource.data.toID == request.auth.uid;
+        allow delete: if false;
+      }
+
+      // Party Join Requests
+      match /partyJoinRequests/data/{reqID} {
+        allow read: if request.auth != null && (
+          resource.data.fromID == request.auth.uid ||
+          resource.data.toID == request.auth.uid
+        );
+        allow create: if request.auth != null &&
+          request.resource.data.fromID == request.auth.uid;
+        allow update, delete: if request.auth != null && (
+          resource.data.toID == request.auth.uid ||
+          resource.data.fromID == request.auth.uid
+        );
+      }
+
+      // Active Parties
+      match /parties/data/{partyID} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null;
+        allow update: if request.auth != null;
+        allow delete: if request.auth != null &&
+          resource.data.leaderID == request.auth.uid;
+      }
+
+      // Global Chat
+      match /globalChat/data/{messageId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null &&
+          request.resource.data.senderId == request.auth.uid;
+        allow update, delete: if false;
+      }
+
+      // Friend Chats (DMs)
+      match /friendChats/data/{messageId} {
+        allow read: if request.auth != null &&
+          resource.data.chatId.matches(".*" + request.auth.uid + ".*");
+        allow create: if request.auth != null &&
+          request.resource.data.senderId == request.auth.uid;
+        allow delete: if request.auth != null &&
+          resource.data.senderId == request.auth.uid;
+        allow update: if false;
+      }
+
+      // Team Chats
+      match /teamChats/data/{messageId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null &&
+          request.resource.data.senderId == request.auth.uid;
+        allow delete: if request.auth != null &&
+          resource.data.senderId == request.auth.uid;
+        allow update: if false;
+      }
+    }
+
   }
 }
